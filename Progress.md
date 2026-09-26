@@ -163,6 +163,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - `origin/mam/qet-projections-runtime-qa` remains the secured fork branch state at `7efd85c52ffc14c96870ea50f968213d976e351f`.
 - Added a small read-only PLC stale-copy warning slice on 2026-09-26: `PlcIoProjectionService` now flags linked slave `plc_*` display/formula fields that differ from the resolved master IO row.
 - Extended `tst_plcioprojectionservice` with focused regression coverage for warning-only stale slave `plc_address` evidence.
+- Added the next smallest read-only PLC slave-terminal-count evidence slice on 2026-09-26: linked PLC slave projections now expose observed slave terminal count and warn when it is lower than the PLC IO `terminalCount`.
+- Extended `tst_plcioprojectionservice` coverage for the warning-only insufficient slave-terminal-count diagnostic.
 
 ## In Progress
 - None.
@@ -183,7 +185,7 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Phase 10 first-slice plan remains a specification only; no test harness, helpers, fixtures, CMake registrations, or documentation files were created.
 - Full P0 fixture matrix, export equivalence tests, master/slave tests, terminal-strip tests, autonum/undo tests, cable/conductor-field tests, PDF checks, and large smoke examples remain unimplemented.
 - Interactive GUI startup is partially verified by the user-controlled `open -n build/baseline/qelectrotech.app` launch. Clean installation, embedded Qt/deploy step, codesign, packaging, and `/Applications` installation remain unverified/open.
-- Full CTest suite has not been re-run after the PLC warning extension.
+- Full CTest suite has not been re-run after the PLC warning extensions.
 - Default KF/ECM build behavior remains open because the active baseline uses `-DBUILD_WITH_KF=OFF`.
 
 ## Private MAM Fork Implementation Plan

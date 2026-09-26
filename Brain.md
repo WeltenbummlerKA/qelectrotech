@@ -20,13 +20,14 @@ Architecture principles:
 Next concrete slices:
 - Confirm the private branch policy for `mam/qet-projections-runtime-qa`: continue dedicated branch or promote a private MAM mainline.
 - Re-audit current Contact/CrossRef and PLC IO Projection Services for strictly read-only behavior and deterministic diagnostics.
-- Add the smallest next PLC warning slice only if it can stay projection-derived, for example stale slave `plc_*` copy evidence or slave-terminal-count evidence.
+- Add the smallest next PLC warning slice only if it can stay projection-derived; stale slave `plc_*` copy evidence and slave-terminal-count evidence are now covered.
 - Add terminal/potential/export-equivalence coverage before deeper terminal-strip or cable semantics.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
 
 Latest PLC projection stabilization:
 - `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.
 - If those copied values differ from the resolved PLC master IO row, the service emits deterministic read-only stale-copy warning fields. It does not repair, persist, relink, or change UI behavior.
+- Linked PLC slave projections now expose observed slave terminal count and emit a warning when that count is below the PLC IO `terminalCount`; this remains read-only evidence only.
 
 Open decisions:
 - Whether `mam/qet-projections-runtime-qa` stays the long-lived work branch or becomes part of a private MAM main branch.
@@ -1051,7 +1052,7 @@ Target platforms from project documentation: Windows, GNU/Linux, macOS, and BSDs
 
 ## PLC IO Projection Warning Slice
 - Implemented in `PlcIoProjectionService` as read-only projection fields only: `direction`, `terminal_count`, existing/effective `terminal_labels`, warning flags, and deterministic warning strings.
-- Current warning coverage: unlinked master IO row, out-of-range `group_index`, duplicate `group_index`, empty master IO address, and explicit terminal-label count mismatch against `terminalCount`.
+- Current warning coverage: unlinked master IO row, out-of-range `group_index`, duplicate `group_index`, empty master IO address, explicit terminal-label count mismatch against `terminalCount`, stale slave `plc_*` copy values, and insufficient slave terminal count.
 - Boundary preserved: no UI/rendering changes, no persistence/XML schema changes, no migration, no slave `plc_*` rewrite, no address-format inference, and no blocking link behavior.
 - Focused coverage is in `tests/qttest/tst_plcioprojectionservice.cpp` using the existing temporary fixture pattern.
-- Next smallest candidate: decide whether to add stale slave `plc_*` copy warnings or slave-terminal-count evidence warnings; both should remain warning-only and projection-derived.
+- Next smallest candidate: re-audit the Contact/CrossRef and PLC projection services for deterministic diagnostics before moving into terminal/potential/export-equivalence coverage.

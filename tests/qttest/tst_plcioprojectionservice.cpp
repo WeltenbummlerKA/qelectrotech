@@ -202,17 +202,20 @@ private slots:
 		QCOMPARE(start->terminal_labels, QStringList({QStringLiteral("1"), QStringLiteral("2")}));
 		QCOMPARE(start->linked_slave_label, QStringLiteral("KMS-NO"));
 		QCOMPARE(start->linked_slave_folio, 0);
+		QCOMPARE(start->linked_slave_terminal_count, 2);
 		QVERIFY(!start->unlinked);
 		QVERIFY(start->duplicate_group_index);
 		QVERIFY(!start->out_of_range_group_index);
 		QVERIFY(!start->empty_address);
 		QVERIFY(start->terminal_label_count_mismatch);
+		QVERIFY(start->insufficient_slave_terminal_count);
 		QVERIFY(!start->stale_plc_copy);
 		QVERIFY(start->stale_plc_copy_fields.isEmpty());
 		QCOMPARE(
 			start->warnings,
 			QStringList({
 				QStringLiteral("terminal label count 2 does not match terminal_count 3"),
+				QStringLiteral("slave terminal count 2 is less than terminal_count 3"),
 				QStringLiteral("duplicate group_index 0 assignment")
 			}));
 
@@ -221,6 +224,7 @@ private slots:
 		QCOMPARE(duplicate->linked_slave_label, QStringLiteral("KMS-NC"));
 		QVERIFY(duplicate->duplicate_group_index);
 		QVERIFY(duplicate->terminal_label_count_mismatch);
+		QVERIFY(duplicate->insufficient_slave_terminal_count);
 		QVERIFY(!duplicate->stale_plc_copy);
 
 		const PlcIoProjection *run = projectionFor(projections, 1);
@@ -235,6 +239,7 @@ private slots:
 		QVERIFY(!run->out_of_range_group_index);
 		QVERIFY(run->empty_address);
 		QVERIFY(!run->terminal_label_count_mismatch);
+		QVERIFY(!run->insufficient_slave_terminal_count);
 		QCOMPARE(run->warnings, QStringList({QStringLiteral("empty address"), QStringLiteral("unlinked")}));
 
 		const PlcIoProjection *pressure = projectionFor(projections, 2);
@@ -273,6 +278,7 @@ private slots:
 		QVERIFY(bad_link->out_of_range_group_index);
 		QVERIFY(!bad_link->unlinked);
 		QVERIFY(!bad_link->duplicate_group_index);
+		QCOMPARE(bad_link->linked_slave_terminal_count, 2);
 		QCOMPARE(bad_link->warnings, QStringList({QStringLiteral("group_index 99 out of range")}));
 	}
 
@@ -306,6 +312,7 @@ private slots:
 			start->warnings,
 			QStringList({
 				QStringLiteral("terminal label count 2 does not match terminal_count 3"),
+				QStringLiteral("slave terminal count 2 is less than terminal_count 3"),
 				QStringLiteral("stale plc copy fields: plc_address")
 			}));
 		QCOMPARE(start->address, QStringLiteral("%I0.0"));

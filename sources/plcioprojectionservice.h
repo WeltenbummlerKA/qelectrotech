@@ -48,11 +48,13 @@ struct PlcIoProjection
 	QUuid linked_slave_uuid;
 	QString linked_slave_label;
 	int linked_slave_folio = -1;
+	int linked_slave_terminal_count = 0;
 	bool unlinked = false;
 	bool duplicate_group_index = false;
 	bool out_of_range_group_index = false;
 	bool empty_address = false;
 	bool terminal_label_count_mismatch = false;
+	bool insufficient_slave_terminal_count = false;
 	bool stale_plc_copy = false;
 	QStringList stale_plc_copy_fields;
 	QStringList warnings;

@@ -135,6 +135,26 @@ void addStalePlcCopyWarning(
 	}
 }
 
+void addSlaveTerminalCountWarning(
+	PlcIoProjection &projection,
+	Element *slave,
+	const ElementData::PlcIO &io)
+{
+	if (!slave) {
+		return;
+	}
+
+	projection.linked_slave_terminal_count = slave->terminals().size();
+	if (projection.linked_slave_terminal_count < io.terminalCount) {
+		projection.insufficient_slave_terminal_count = true;
+		addWarning(
+			projection,
+			QStringLiteral("slave terminal count %1 is less than terminal_count %2")
+				.arg(projection.linked_slave_terminal_count)
+				.arg(io.terminalCount));
+	}
+}
+
 QList<Element *> plcMastersInProject(QETProject &project)
 {
 	QList<Element *> result;
@@ -246,6 +266,7 @@ QList<PlcIoProjection> PlcIoProjectionService::channels(QETProject &project) con
 				projection.linked_slave_uuid = slave->uuid();
 				projection.linked_slave_label = elementLabel(slave);
 				projection.linked_slave_folio = folioOf(project, slave);
+				addSlaveTerminalCountWarning(projection, slave, plc_data.ios.at(index));
 				addStalePlcCopyWarning(projection, slave, plc_data.ios.at(index));
 				projection.duplicate_group_index = slaves.size() > 1;
 				if (projection.duplicate_group_index) {
@@ -276,6 +297,7 @@ QList<PlcIoProjection> PlcIoProjectionService::channels(QETProject &project) con
 			projection.linked_slave_uuid = slave ? slave->uuid() : QUuid();
 			projection.linked_slave_label = elementLabel(slave);
 			projection.linked_slave_folio = folioOf(project, slave);
+			projection.linked_slave_terminal_count = slave ? slave->terminals().size() : 0;
 			projection.out_of_range_group_index = true;
 			addWarning(
 				projection,
