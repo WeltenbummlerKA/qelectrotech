@@ -182,6 +182,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Added a small terminal-strip read-only regression slice on 2026-09-26: `tst_terminalstrip_roundtrip` uses a clearly synthetic/provisional fixture derived from the documented `TerminalStrip`/`PhysicalTerminal`/`RealTerminal`/`TerminalStripBridge` XML shape and an embedded terminal-block element based on the existing terminal definition structure.
   The test verifies that `--resave` preserves project-level terminal-strip membership and bridge UUID/color references across first and second saves.
   This is test-only coverage and does not change product code, UI, persistence format, XML schema, Device/Core ownership, runtime, or packaging behavior.
+- Added the next smallest terminal-strip regression slice on 2026-09-26: `tst_terminalstrip_roundtrip` now also verifies that the strip data fields `installation`, `location`, `name`, `comment`, and `description` survive fixture load, first `--resave`, and second `--resave`.
+  This remains test-only read-only coverage over the existing terminal-strip XML/data surface and does not change product code, UI, persistence format, XML schema, Device/Core ownership, runtime, or packaging behavior.
 
 ## In Progress
 - None.

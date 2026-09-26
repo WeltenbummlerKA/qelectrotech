@@ -84,6 +84,19 @@ QStringList terminalStripRealTerminalUuids(const QDomElement &terminal_strip)
 	return uuids;
 }
 
+QMap<QString, QString> terminalStripInformations(const QDomElement &terminal_strip)
+{
+	QMap<QString, QString> informations;
+	const QDomElement data = terminal_strip.firstChildElement(QStringLiteral("terminal_strip_data"));
+	const QDomElement information_root = data.firstChildElement(QStringLiteral("informations"));
+	for (QDomElement information = information_root.firstChildElement(QStringLiteral("information"));
+		 !information.isNull();
+		 information = information.nextSiblingElement(QStringLiteral("information"))) {
+		informations.insert(information.attribute(QStringLiteral("name")), information.text());
+	}
+	return informations;
+}
+
 void verifySyntheticTerminalStrip(const QDomDocument &doc)
 {
 	QVERIFY2(!doc.isNull(), "project XML is not parseable");
@@ -98,6 +111,14 @@ void verifySyntheticTerminalStrip(const QDomDocument &doc)
 
 	const QDomElement data = strip.firstChildElement(QStringLiteral("terminal_strip_data"));
 	QCOMPARE(data.attribute(QStringLiteral("uuid")), QStringLiteral("{bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb}"));
+	const QMap<QString, QString> informations = terminalStripInformations(strip);
+	QCOMPARE(informations.value(QStringLiteral("installation")), QStringLiteral("=SYN"));
+	QCOMPARE(informations.value(QStringLiteral("location")), QStringLiteral("+QA"));
+	QCOMPARE(informations.value(QStringLiteral("name")), QStringLiteral("XT-SYN"));
+	QCOMPARE(informations.value(QStringLiteral("comment")),
+			 QStringLiteral("Synthetic provisional terminal-strip regression fixture derived from QET terminal-strip XML/code structure."));
+	QCOMPARE(informations.value(QStringLiteral("description")),
+			 QStringLiteral("Temporary MAM test fixture; not final domain truth."));
 
 	const QStringList real_terminal_uuids = terminalStripRealTerminalUuids(strip);
 	QCOMPARE(real_terminal_uuids,
