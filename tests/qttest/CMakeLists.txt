@@ -344,6 +344,16 @@ target_compile_definitions(tst_terminal_potential_exports PRIVATE
   "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
 
 add_executable(
+  tst_terminalstrip_roundtrip
+  tst_terminalstrip_roundtrip.cpp)
+add_test(NAME tst_terminalstrip_roundtrip COMMAND tst_terminalstrip_roundtrip)
+add_dependencies(tst_terminalstrip_roundtrip qelectrotech)
+target_include_directories(tst_terminalstrip_roundtrip PRIVATE ${QET_DIR}/sources)
+target_link_libraries(tst_terminalstrip_roundtrip PRIVATE Qt::Test Qt::Xml)
+target_compile_definitions(tst_terminalstrip_roundtrip PRIVATE
+  "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
+
+add_executable(
   tst_master_slave_links
   tst_master_slave_links.cpp)
 add_test(NAME tst_master_slave_links COMMAND tst_master_slave_links)

@@ -179,6 +179,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Added terminal-strip source-of-truth/read-only decision evidence on 2026-09-26 in `Decision_Terminal_Strip_ReadOnly_Boundary.md`.
   Current evidence keeps terminal strips project-owned through `QETProject` and `TerminalStrip`, with `RealTerminal` membership resolved by placed terminal `Element` UUIDs and bridges resolved back through loaded strip real terminals.
   This is documentation only; no product code, UI, persistence, XML schema, Device/Core, runtime, or package behavior changed.
+- Added a small terminal-strip read-only regression slice on 2026-09-26: `tst_terminalstrip_roundtrip` uses a clearly synthetic/provisional fixture derived from the documented `TerminalStrip`/`PhysicalTerminal`/`RealTerminal`/`TerminalStripBridge` XML shape and an embedded terminal-block element based on the existing terminal definition structure.
+  The test verifies that `--resave` preserves project-level terminal-strip membership and bridge UUID/color references across first and second saves.
+  This is test-only coverage and does not change product code, UI, persistence format, XML schema, Device/Core ownership, runtime, or packaging behavior.
 
 ## In Progress
 - None.

@@ -25,6 +25,7 @@ Next concrete slices:
 - The latest terminal/potential/export-equivalence slice adds conductor identity evidence: `--export-wiring` must expose one non-empty, unique `conductor_uuid` per expected conductor in the workflow fixture.
 - The following small export-contract slice pins the `--export-wiring` and `--export-cables` CSV headers consumed by those endpoint and identity comparisons.
 - Terminal-strip source-of-truth/read-only evidence is documented in `Decision_Terminal_Strip_ReadOnly_Boundary.md`; the only currently justified next strip slice is a test-only XML load/resave regression if its fixture is derived from existing code structure.
+- The first terminal-strip regression slice is now covered by `tst_terminalstrip_roundtrip`: its fixture is explicitly synthetic/provisional, uses embedded terminal elements plus project-level `<terminal_strips>`, and only asserts read-only load/resave preservation of strip membership and bridge references.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
 
 Latest PLC projection stabilization:
@@ -47,6 +48,7 @@ Terminal-strip decision evidence:
 - `RealTerminal` persists membership by placed terminal element UUID, and `TerminalStrip::fromXml()` resolves those UUIDs through `ElementProvider::freeTerminal()`.
 - `TerminalStripBridge` persists bridge UUID/color and real-terminal element UUID references, then resolves through loaded strip real terminals.
 - Current evidence supports read-only projection/regression coverage over existing strip state, but not an electrical-potential, cable/core, UI, XML-schema, or migration ownership change.
+- Fixture boundary: `tests/qttest/fixtures/terminal_strip_synthetic_minimal.qet` is a temporary synthetic qttest fixture. It is acceptable as regression evidence for the existing XML/code structure, not as final MAM Fachwahrheit for real terminal-strip engineering.
 
 Risks:
 - A premature XML/Core migration would couple MAM needs to QET compatibility risk before semantics are stable.
