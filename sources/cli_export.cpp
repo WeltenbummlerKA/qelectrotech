@@ -79,6 +79,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-links", "links"},
 		{"--export-mam-contact-crossref", "mam-contact-crossref"},
 		{"--export-mam-plc-io", "mam-plc-io"},
+		{"--export-mam-summary", "mam-summary"},
 		{"--export-mam-terminal-potential", "mam-terminal-potential"},
 		{"--info", "info"},
 		{"--check-elements", "check"},
@@ -1007,6 +1008,161 @@ int exportMamPlcIo(QETProject &project, const QString &output)
 	return 0;
 }
 
+/// First combined MAM working list. It deliberately keeps PLC,
+/// Contact/CrossRef, and Terminal/Potential rows separate instead of inventing
+/// joins across domains that do not have one agreed source of truth yet.
+int exportMamSummary(QETProject &project, const QString &output)
+{
+	static const QStringList columns {
+		"record_type", "folio", "item_uuid", "label", "role", "category",
+		"address_or_terminal", "linked_item", "status", "warnings",
+		"source_export"
+	};
+
+	QString csv = columns.join(";") % "\n";
+	int rows = 0;
+	int warning_rows = 0;
+	auto appendRow = [&](const QStringList &values) {
+		QStringList escaped;
+		for (const QString &value : values)
+			escaped << csvField(value);
+		csv += escaped.join(QLatin1Char(';')) % "\n";
+		++rows;
+		if (values.value(8) == QStringLiteral("WARNING"))
+			++warning_rows;
+	};
+
+	PlcIoProjectionService plc_service;
+	const QList<PlcIoProjection> plc_channels = plc_service.channels(project);
+	for (const PlcIoProjection &channel : plc_channels) {
+		const QString status = channel.warnings.isEmpty()
+			? QStringLiteral("OK")
+			: QStringLiteral("WARNING");
+		appendRow({
+			QStringLiteral("plc_io"),
+			QString::number(channel.folio),
+			channel.master_uuid.toString(QUuid::WithoutBraces),
+			channel.master_label,
+			channel.direction == PlcIoProjection::Input
+				? QStringLiteral("input")
+				: QStringLiteral("output"),
+			ElementData::translatedPlcIOType(channel.type),
+			channel.address.isEmpty()
+				? channel.terminal_labels.join(QLatin1Char(','))
+				: channel.address,
+			channel.linked_slave_label,
+			status,
+			channel.warnings.join(QStringLiteral(" | ")),
+			QStringLiteral("mam-plc-io")
+		});
+	}
+
+	ContactCrossRefProjectionService contact_service;
+	const QList<ContactAssignmentProjection> assignments = contact_service.assignments(project);
+	for (const ContactAssignmentProjection &assignment : assignments) {
+		const QString status = assignment.validation_messages.isEmpty()
+			? QStringLiteral("OK")
+			: QStringLiteral("WARNING");
+		appendRow({
+			QStringLiteral("contact_crossref"),
+			QString::number(assignment.slave_folio),
+			assignment.slave_uuid.toString(QUuid::WithoutBraces),
+			assignment.slave_label,
+			contactTypeName(assignment.slave_contact_type),
+			assignment.group_index_resolves
+				? contactTypeName(assignment.group.type)
+				: QStringLiteral("unresolved_group"),
+			assignment.group_index >= 0
+				? QStringLiteral("group_index %1").arg(assignment.group_index)
+				: QStringLiteral("missing group_index"),
+			assignment.master_label,
+			status,
+			assignment.validation_messages.join(QStringLiteral(" | ")),
+			QStringLiteral("mam-contact-crossref")
+		});
+	}
+
+	const QHash<Diagram *, int> folios = diagramFolioIndex(project);
+	QList<Conductor *> conductors;
+	const QList<Diagram *> diagrams = project.diagrams();
+	for (Diagram *diagram : diagrams)
+		conductors << diagram->conductors();
+	std::sort(conductors.begin(), conductors.end(), [](Conductor *left, Conductor *right) {
+		const QString left_key = left->properties().text
+			% QLatin1Char('|') % uuidString(left->uuid());
+		const QString right_key = right->properties().text
+			% QLatin1Char('|') % uuidString(right->uuid());
+		return left_key < right_key;
+	});
+
+	for (Conductor *conductor : conductors) {
+		QList<Terminal *> terminals;
+		QSet<Conductor *> potential_conductors =
+			conductor->relatedPotentialConductors(true, &terminals);
+		potential_conductors.insert(conductor);
+
+		QStringList potential_wire_numbers;
+		for (Conductor *potential_conductor : potential_conductors) {
+			const QString wire = potential_conductor->properties().text;
+			if (!wire.isEmpty())
+				potential_wire_numbers << wire;
+		}
+		potential_wire_numbers.removeDuplicates();
+		potential_wire_numbers.sort();
+
+		Element *from_element = terminalElement(conductor->terminal1);
+		Element *to_element = terminalElement(conductor->terminal2);
+		QStringList row_warnings;
+		if (conductor->uuid().isNull())
+			row_warnings << QStringLiteral("empty conductor_uuid");
+		if (!conductor->terminal1 || !conductor->terminal2)
+			row_warnings << QStringLiteral("missing conductor endpoint");
+		if (!from_element || elementLabel(from_element).isEmpty())
+			row_warnings << QStringLiteral("empty from_element_label");
+		if (!to_element || elementLabel(to_element).isEmpty())
+			row_warnings << QStringLiteral("empty to_element_label");
+		if (conductor->properties().text.isEmpty() && potential_wire_numbers.isEmpty())
+			row_warnings << QStringLiteral("empty potential wire number");
+
+		const QString status = row_warnings.isEmpty()
+			? QStringLiteral("OK")
+			: QStringLiteral("WARNING");
+		const QStringList endpoint_labels {
+			from_element ? elementLabel(from_element) : QString(),
+			to_element ? elementLabel(to_element) : QString()
+		};
+		const QStringList endpoint_terminals {
+			terminalName(conductor->terminal1),
+			terminalName(conductor->terminal2)
+		};
+		appendRow({
+			QStringLiteral("terminal_potential"),
+			QString::number(folios.value(conductor->diagram(), 0)),
+			uuidString(conductor->uuid()),
+			conductor->properties().text,
+			QStringLiteral("conductor"),
+			potential_wire_numbers.value(0),
+			endpoint_terminals.join(QStringLiteral(" -> ")),
+			endpoint_labels.join(QStringLiteral(" -> ")),
+			status,
+			row_warnings.join(QStringLiteral(" | ")),
+			QStringLiteral("mam-terminal-potential")
+		});
+	}
+
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << csv;
+	file.close();
+	out << "Exported " << rows << " MAM summary row(s), "
+		<< warning_rows << " warning row(s) -> " << output << "\n";
+	return 0;
+}
+
 /// Round-trip: load the project and write its XML back out, so an external
 /// diff can reveal markup QET silently normalises (tolerated-but-invalid XML).
 int resaveProject(QETProject &project, const QString &output)
@@ -1195,6 +1351,8 @@ int run(const QStringList &args)
 		return exportMamContactCrossRef(project, output);
 	if (format == "mam-plc-io")
 		return exportMamPlcIo(project, output);
+	if (format == "mam-summary")
+		return exportMamSummary(project, output);
 	if (format == "mam-terminal-potential")
 		return exportMamTerminalPotential(project, output);
 	if (format == "resave")

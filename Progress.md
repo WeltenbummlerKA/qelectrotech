@@ -209,6 +209,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
   This remains test-only coverage over existing export-level diagnostics; no product behavior, UI, persistence, XML schema, Device/Core, runtime, packaging, or repair behavior changed.
 - Validated the private MAM fork milestone on 2026-09-26 with the affected regression set green: PLC IO projection/export, Contact/CrossRef projection/export, Terminal/Potential export, terminal-strip round-trip, CLI export/XML round-trip, master/slave links, contact usage, and conductor self-retrace.
   Current MAM CSV family exists for PLC IO, Contact/CrossRef, and Terminal/Potential. Still deliberately open: full CTest, UI/workflow validation, packaging/test-bundle validation, and a combined summary report.
+- Added the first combined MAM overview list on 2026-09-26: `--export-mam-summary` writes one semicolon CSV working list with separate `plc_io`, `contact_crossref`, and `terminal_potential` rows.
+  It reuses the existing read-only projections/export logic and does not join unrelated domains, change UI, persistence, XML schema, Device/Core ownership, runtime, packaging, or repair behavior.
+  Focused CLI coverage is in `tst_mam_summary_export`, checking the shared header plus expected contact and terminal/potential warning rows.
 
 ## In Progress
 - None.
@@ -229,7 +232,7 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Phase 10 first-slice plan remains a specification only; no test harness, helpers, fixtures, CMake registrations, or documentation files were created.
 - Full P0 fixture matrix, export equivalence tests, master/slave tests, terminal-strip tests, autonum/undo tests, cable/conductor-field tests, PDF checks, and large smoke examples remain unimplemented.
 - Interactive GUI startup is partially verified by the user-controlled `open -n build/baseline/qelectrotech.app` launch. Clean installation, embedded Qt/deploy step, codesign, packaging, and `/Applications` installation remain unverified/open.
-- Full CTest suite has not been re-run after the PLC warning extensions and MAM CSV milestone validation.
+- Full CTest suite has not been re-run after the PLC warning extensions and MAM CSV summary slice.
 - Default KF/ECM build behavior remains open because the active baseline uses `-DBUILD_WITH_KF=OFF`.
 
 ## Private MAM Fork Implementation Plan

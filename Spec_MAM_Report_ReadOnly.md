@@ -32,9 +32,38 @@ Die kombinierte Report-Familie bleibt fachlich getrennt und kann spaeter durch e
 - `mam-plc-io`: bestehender PLC-IO-Kanalreport aus `PlcIoProjectionService`.
 - `mam-contact-crossref`: naechster kleiner Report ueber `ContactCrossRefProjectionService`, mit Master-/Slave-Zuordnung, Gruppenindex, Gruppenmetadaten und Warnungen.
 - `mam-terminal-potential`: naechster Report fuer Terminal-, Leiter- und Potential-Kontext, aus bestehenden Live-Graph- und Export-/Datenbank-Fakten, ohne Terminal-Strip-Ownership zu behaupten.
-- `mam-summary`: spaeterer Uebersichtsreport mit Zaehlern und Warnungsgruppen, nicht als Ersatz fuer die Detail-CSVs.
+- `mam-summary`: erste kombinierte Arbeitsliste mit getrennten Zeilen je PLC-IO-, Contact/CrossRef- und Terminal/Potential-Fakt. Sie ersetzt die Detail-CSVs nicht und erfindet keine fachlichen Joins.
 
 Ein zukuenftiger kombinierter Export darf mehrere CSV-Dateien schreiben oder eine klar benannte Summary ergaenzen. Er soll die Detailtabellen nicht zu einer breiten Misch-Tabelle verschmelzen.
+
+## Implementierter Summary-Slice
+
+Der erste Summary-Slice ist `--export-mam-summary <project.qet> <output.csv>`.
+
+Minimalfelder:
+
+- `record_type`
+- `folio`
+- `item_uuid`
+- `label`
+- `role`
+- `category`
+- `address_or_terminal`
+- `linked_item`
+- `status`
+- `warnings`
+- `source_export`
+
+Zeilentypen:
+
+- `plc_io`: aus `PlcIoProjectionService`, analog `mam-plc-io`.
+- `contact_crossref`: aus `ContactCrossRefProjectionService`, analog `mam-contact-crossref`.
+- `terminal_potential`: aus der bestehenden Live-Graph-Potentialauswertung, analog `mam-terminal-potential`.
+
+Bewusst nicht enthalten:
+
+- keine Verknuepfung zwischen PLC, Kontakt und Leiter, wenn diese im Projekt nicht eindeutig als gemeinsame Fachwahrheit existiert;
+- keine UI, Persistenz, XML-Schema-, Device/Core-, Runtime-, Packaging- oder Reparaturfunktion.
 
 ## Gemeinsame IDs und Felder
 

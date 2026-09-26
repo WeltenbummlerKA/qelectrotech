@@ -51,6 +51,7 @@ namespace CLIExport {
 		  qelectrotech --export-wiring  <project.qet> <output.csv>
 		  qelectrotech --export-nets    <project.qet> <output.json>
 		  qelectrotech --export-links   <project.qet> <output.csv>
+		  qelectrotech --export-mam-summary <project.qet> <output.csv>
 		  qelectrotech --export-mam-terminal-potential <project.qet> <output.csv>
 		  qelectrotech --info           <project.qet> [output.json]
 		  qelectrotech --check-elements <element.elmt | directory>
@@ -74,6 +75,9 @@ namespace CLIExport {
 		nets: electrical nets (connected-terminal groups) as JSON.
 		links: element cross-references (coil/contact) as CSV, with
 		       unresolved links flagged.
+		mam-summary: private MAM read-only working-list CSV, combining
+		       separate PLC IO, Contact/CrossRef, and Terminal/Potential rows
+		       without inventing cross-domain joins.
 		mam-terminal-potential: private MAM read-only terminal/potential CSV,
 		       one row per conductor with endpoint and potential-group facts.
 		info: structural project summary as JSON (stdout, or a file) —
