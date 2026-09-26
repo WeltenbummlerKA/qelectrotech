@@ -3,6 +3,48 @@
 ## Project Vision
 Build a professional, data-driven electrical CAE system using QElectroTech as the technical starting point, now privately/MAM-internally in the fork rather than as the current upstream contribution path.
 
+## Private MAM Fork Leitplanken
+
+Zielbild:
+- QElectroTech remains the chassis for editor, project load/save, symbols, diagrams, conductors, terminal strips, database rebuilds, and existing exports.
+- The MAM fork adds CAE semantics step by step as private, MAM-specific capability.
+- Delivery target is the private MAM fork, not an upstream PR or generic QET contribution.
+
+Architecture principles:
+- Projection before ownership: derive Contact/CrossRef, PLC IO, terminal/potential, and report facts from existing project state before changing authority.
+- Read-only first: warnings, reports, and validation views come before writes, repairs, schema changes, or UI commands.
+- Narrow slices: each slice has one domain purpose, one verification surface, and no unrelated runtime/package work.
+- Compatibility first: existing `.qet` XML, deterministic resave behavior, legacy files, and current QET workflows must remain protected.
+- Separation: runtime packaging, GUI smoke, signing, and installation are their own track and must not be mixed with PLC/CAE Fachlogik.
+
+Next concrete slices:
+- Confirm the private branch policy for `mam/qet-projections-runtime-qa`: continue dedicated branch or promote a private MAM mainline.
+- Re-audit current Contact/CrossRef and PLC IO Projection Services for strictly read-only behavior and deterministic diagnostics.
+- Add the smallest next PLC warning slice only if it can stay projection-derived, for example stale slave `plc_*` copy evidence or slave-terminal-count evidence.
+- Add terminal/potential/export-equivalence coverage before deeper terminal-strip or cable semantics.
+- Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
+
+Open decisions:
+- Whether `mam/qet-projections-runtime-qa` stays the long-lived work branch or becomes part of a private MAM main branch.
+- Whether duplicate/contact assignment eventually becomes a dedicated domain object or remains read-only projection plus diagnostics.
+- Whether PLC semantics stop at warning/report evidence or later become a first-class PLC/device model.
+- Whether terminal strips become part of electrical potential semantics or remain a separate project/report domain until proven otherwise.
+- Whether future MAM report/export data should read live graph, derived SQLite, XML-derived exporters, or a new tested projection layer.
+
+Risks:
+- A premature XML/Core migration would couple MAM needs to QET compatibility risk before semantics are stable.
+- UI-first work could bake presentation decisions into domain ownership.
+- PLC and Contact/CrossRef share `group_index` mechanics but are not the same domain; merging them too early would hide errors.
+- Runtime/package findings can distract from CAE logic; dev-bundle startup evidence is not packaging evidence.
+- Upstream alignment can consume effort without serving the private MAM fork direction.
+
+Verification strategy:
+- Keep using small purpose-built fixtures and focused QtTest/CLI checks where possible.
+- Compare multiple observable sources when the domain spans them: live graph, XML resave/export, SQLite-derived reports, and CLI outputs.
+- Document every slice's forbidden areas explicitly: no persistence, UI, XML schema, command, package, or core ownership change unless that is the approved slice.
+- Treat full GUI/runtime/package validation as a separate controlled track with user present for macOS prompts.
+- Before any migration, require fixture coverage, compatibility acceptance criteria, and a rollback path.
+
 ## CAE Reference Matrix
 Phase 1 CAE reference analysis is documented in `CAE_Reference_Matrix.md`.
 

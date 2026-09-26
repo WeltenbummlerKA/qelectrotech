@@ -166,8 +166,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - None.
 
 ## Pending
-- Decide whether the private/MAM-specific fork direction should continue on a private main branch or stay on a dedicated work branch; after that decision, further MAM slices should happen only in the fork.
-- Keep upstream as a reference/source for occasional updates, not as the current contribution target.
+- Keep `mam/qet-projections-runtime-qa` as the current private/MAM fork line unless an explicit private-main branch decision is made.
+- Keep upstream as a reference/source for occasional updates, not as the current contribution target. Upstream PR work is not the goal of this roadmap.
 - Decide later whether and how to mark the verified baseline.
 - Interactive GUI startup is partially verified: user-controlled manual `open -n build/baseline/qelectrotech.app` launch started successfully. Further smoke behavior should only run with the user present for any macOS permission prompts.
 - A later optional Runtime-QA/installation slice may verify startup interactively, but it must be handled separately from PLC/CAE feature work.
@@ -183,6 +183,50 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Interactive GUI startup is partially verified by the user-controlled `open -n build/baseline/qelectrotech.app` launch. Clean installation, embedded Qt/deploy step, codesign, packaging, and `/Applications` installation remain unverified/open.
 - Full CTest suite has not been re-run after the PLC warning extension.
 - Default KF/ECM build behavior remains open because the active baseline uses `-DBUILD_WITH_KF=OFF`.
+
+## Private MAM Fork Implementation Plan
+
+### Phase 0 - Sicherung, Branch-Strategie, Fork-Grundsatz
+- Treat the branch `mam/qet-projections-runtime-qa` and the pushed state after `ac0980b3b3e8 Record private MAM fork direction` as the secured private fork baseline.
+- Decide only one branch policy before new feature slices: either continue this dedicated MAM work branch or promote a private MAM mainline. Do not mix both.
+- Keep upstream QElectroTech as read-only reference and occasional rebase/compare source, not as the delivery target.
+- No-Go: no upstream PR plan, no contribution-roadmap, no feature work before the private branch policy is stated.
+
+### Phase 1 - Existing Read-only Projection/Validation Stabilisieren
+- Audit and tighten the current read-only Contact/CrossRef and PLC IO Projection Services before broadening semantics.
+- Keep projections derived from loaded `QETProject`/`Element`/`ElementData` state; writes, repairs, XML changes, and UI behavior stay out of scope.
+- Add only small warning/validation slices where current service boundaries can already express the facts.
+- No-Go: no hidden mutation through read APIs, no persistence migration, no UI or command behavior change in this phase.
+
+### Phase 2 - PLC/Contact/Terminal/Potential Semantik Vertiefen
+- Deepen domain evidence in narrow order: PLC IO rows and `group_index`, contact capacity/assignment, terminal identity, conductor potentials, terminal strips, then export equivalence.
+- Prefer read-only diagnostics and fixtures that compare live graph, XML-derived exports, and SQLite-derived reports.
+- Keep `PlcMasterData::ios`, `ElementData`, current links, and conductor/terminal objects as observed sources until a later ownership decision is explicit.
+- No-Go: no early Device/Core rewrite, no inferred vendor-specific PLC rules, no terminal-strip/potential ownership change without tests and decision note.
+
+### Phase 3 - MAM-specific Data, Export, Report Layer
+- Add MAM-specific reports/exports as a separate layer over stable projections where possible.
+- Keep report/export naming, filtering, and validation MAM-specific and private to the fork.
+- Use existing CLI/export/test helper patterns before introducing new infrastructure.
+- No-Go: no report/export work that silently changes core QET behavior; no mixing MAM report rules into generic upstream-facing code paths.
+
+### Phase 4 - Kontrollierte UI-/Workflow-Integration
+- Start UI/workflow changes only after the underlying projection semantics are stable and testable.
+- Integrate as opt-in MAM workflow surfaces first: warnings, review views, or explicit commands, not automatic rewrites.
+- Keep undo/redo, graphics rendering, and project persistence separate review topics.
+- No-Go: no early UI-first implementation, no CrossRef rendering rewrite as a shortcut for domain ownership, no command behavior change without focused verification.
+
+### Phase 5 - Lokale Runtime, Packaging, Test-Bundle Strategie
+- Handle runtime/package/install work as its own slice after feature semantics are separated.
+- Establish the local bundle target, Qt deployment, signing/resources status, and user-controlled macOS GUI smoke checks before any installation claim.
+- Keep build/test/runtime evidence current per slice, especially because the known bundle is still a dev bundle with external Homebrew Qt dependencies.
+- No-Go: do not mix packaging/runtime QA with PLC/CAE feature logic; do not treat CLI or bundle inspection as full GUI/install proof.
+
+### Phase 6 - Spaetere Persistenz/XML/Core-Migration Nur Nach Expliziter Entscheidung
+- Consider XML schema, persistence, Device/Core, ContactAssignment, PLC device model, or canonical database changes only after phases 1-4 produce stable facts and user approval.
+- Prepare a decision note before any migration: current source of truth, compatibility impact, rollback path, fixture coverage, and export/report consequences.
+- Keep legacy `.qet` compatibility and deterministic resave behavior as hard acceptance criteria.
+- No-Go: no speculative schema migration, no core rewrite hidden inside report/UI work, no migration without explicit decision and tests.
 
 ## Blocked
 - None.
