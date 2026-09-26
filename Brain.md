@@ -20,7 +20,7 @@ Architecture principles:
 Next concrete slices:
 - Confirm the private branch policy for `mam/qet-projections-runtime-qa`: continue dedicated branch or promote a private MAM mainline.
 - Add the smallest next PLC warning slice only if it can stay projection-derived; stale slave `plc_*` copy evidence and slave-terminal-count evidence are now covered.
-- Add terminal/potential/export-equivalence coverage before deeper terminal-strip or cable semantics.
+- Continue terminal/potential/export-equivalence coverage before deeper terminal-strip or cable semantics; the current workflow fixture now cross-checks cable export terminal endpoint pairs against the existing net/wiring/wire expectations.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
 
 Latest PLC projection stabilization:

@@ -10,6 +10,8 @@
 #include <QSet>
 #include <QTemporaryDir>
 
+#include <utility>
+
 namespace {
 
 QString terminalKey(const QJsonObject &terminal)
@@ -75,6 +77,24 @@ QMap<QString, QSet<QString>> expectedWiringTerminals()
 	};
 }
 
+QMap<QString, int> expectedCableTerminalPairs()
+{
+	return {
+		{QStringLiteral("bottom|top"), 2},
+		{QStringLiteral("bottom|tap"), 2},
+		{QStringLiteral("bottom|t"), 1},
+		{QStringLiteral("l|top"), 1},
+		{QStringLiteral("b|top"), 1},
+	};
+}
+
+QString terminalPairKey(QString first, QString second)
+{
+	if (second < first)
+		std::swap(first, second);
+	return first + QLatin1Char('|') + second;
+}
+
 } // namespace
 
 class tst_terminal_potential_exports : public QObject
@@ -96,12 +116,14 @@ private slots:
 
 		const QString nets_path = out_dir.filePath(QStringLiteral("nets.json"));
 		const QString wiring_path = out_dir.filePath(QStringLiteral("wiring.csv"));
+		const QString cables_path = out_dir.filePath(QStringLiteral("cables.csv"));
 		const QString wires_path = out_dir.filePath(QStringLiteral("wires.csv"));
 		const QString info_path = out_dir.filePath(QStringLiteral("info.json"));
 
 		const QList<QPair<QString, QString>> commands {
 			{QStringLiteral("--export-nets"), nets_path},
 			{QStringLiteral("--export-wiring"), wiring_path},
+			{QStringLiteral("--export-cables"), cables_path},
 			{QStringLiteral("--export-wires"), wires_path},
 			{QStringLiteral("--info"), info_path},
 		};
@@ -163,6 +185,23 @@ private slots:
 			};
 			QCOMPARE(actual_terminals, expected_wiring.value(wire));
 		}
+
+		const QList<QStringList> cables_rows =
+			CliTestUtils::parseSemicolonCsv(QString::fromUtf8(CliTestUtils::readFile(cables_path)));
+		QCOMPARE(cables_rows.size() - 1, expected_wires.size());
+		const int cable_from_terminal_index = cables_rows.first().indexOf(QStringLiteral("Borne 1"));
+		const int cable_to_terminal_index = cables_rows.first().indexOf(QStringLiteral("Borne 2"));
+		QVERIFY(cable_from_terminal_index >= 0);
+		QVERIFY(cable_to_terminal_index >= 0);
+
+		QMap<QString, int> actual_cable_terminal_pairs;
+		for (int i = 1; i < cables_rows.size(); ++i) {
+			const QStringList row = cables_rows.at(i);
+			++actual_cable_terminal_pairs[terminalPairKey(
+				row.at(cable_from_terminal_index),
+				row.at(cable_to_terminal_index))];
+		}
+		QCOMPARE(actual_cable_terminal_pairs, expectedCableTerminalPairs());
 
 		const QStringList wire_lines =
 			QString::fromUtf8(CliTestUtils::readFile(wires_path)).split(QLatin1Char('\n'), Qt::SkipEmptyParts);

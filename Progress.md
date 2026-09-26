@@ -168,6 +168,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Re-audited Contact/CrossRef and PLC IO projection diagnostics on 2026-09-26.
   Warning/flag naming and messages are deterministic and intentionally read-only; PLC projections still use `PlcMasterData::ios` plus `group_index` as authority and treat slave `plc_*` values as stale-copy evidence only.
   Existing focused QtTests cover contact duplicate/missing/out-of-range/type-mismatch diagnostics and PLC duplicate/out-of-range/empty-address/terminal-label/stale-copy/slave-terminal-count diagnostics.
+- Added a small terminal/potential/export-equivalence coverage slice on 2026-09-26: `tst_terminal_potential_exports` now includes `--export-cables` and checks its terminal endpoint-pair multiset against the same workflow fixture used for net/wiring/wire export assertions.
+  This is test-only coverage and does not change production export logic, UI, persistence, XML schema, Device/Core ownership, or runtime/package behavior.
 
 ## In Progress
 - None.
