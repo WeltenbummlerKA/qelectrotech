@@ -189,6 +189,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Added the first MAM-specific read-only report/export slice on 2026-09-26: `--export-mam-plc-io` writes a semicolon CSV from `PlcIoProjectionService` with PLC master row facts, linked slave evidence, status, and warning text.
   The export consumes the existing read-only PLC projection service and does not change UI, persistence, XML schema, Device/Core ownership, runtime, or packaging.
   Focused CLI coverage is in `tst_mam_plc_io_export`, using a temporary PLC variant derived from the existing master/slave fixture.
+- Added `Spec_MAM_Report_ReadOnly.md` on 2026-09-26 as the short field/audience decision for the combined MAM report family.
+  Boundary: read-only CLI/CSV first, no UI, persistence, XML schema, Device/Core, runtime, packaging, or repair behavior.
+  The next small implementation slice is a Contact/CrossRef CSV over `ContactCrossRefProjectionService`.
 
 ## In Progress
 - None.
