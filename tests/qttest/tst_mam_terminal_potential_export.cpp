@@ -19,6 +19,7 @@
 
 #include "cli_test_utils.h"
 
+#include <QFile>
 #include <QTemporaryDir>
 
 namespace {
@@ -40,6 +41,42 @@ QHash<QString, QString> rowByWireNumber(const QList<QStringList> &rows, const QS
 		return values;
 	}
 	return values;
+}
+
+QHash<QString, QString> rowByEndpoints(
+	const QList<QStringList> &rows,
+	const QString &from_element_label,
+	const QString &to_element_label)
+{
+	QHash<QString, QString> values;
+	if (rows.isEmpty())
+		return values;
+
+	const QStringList header = rows.first();
+	for (int row = 1; row < rows.size(); ++row) {
+		const QStringList fields = rows.at(row);
+		if (fields.value(header.indexOf(QStringLiteral("from_element_label"))) != from_element_label)
+			continue;
+		if (fields.value(header.indexOf(QStringLiteral("to_element_label"))) != to_element_label)
+			continue;
+
+		for (int column = 0; column < header.size(); ++column)
+			values.insert(header.at(column), fields.value(column));
+		return values;
+	}
+	return values;
+}
+
+QString writeFixtureVariant(QTemporaryDir &dir, const QString &file_name, const QString &content)
+{
+	const QString path = dir.filePath(file_name);
+	QFile file(path);
+	if (!dir.isValid() || !file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+		return {};
+	if (file.write(content.toUtf8()) <= 0)
+		return {};
+	file.close();
+	return path;
 }
 
 } // namespace
@@ -121,6 +158,52 @@ private slots:
 		QCOMPARE(w005.value(QStringLiteral("from_terminal")), QStringLiteral("bottom"));
 		QCOMPARE(w005.value(QStringLiteral("to_element_label")), QStringLiteral("v2_circuit_breaker"));
 		QCOMPARE(w005.value(QStringLiteral("to_terminal")), QStringLiteral("top"));
+	}
+
+	void exportsExistingTerminalPotentialWarnings()
+	{
+		const QString fixture = QFINDTESTDATA("fixtures/workflow_exports_minimal.qet");
+		QVERIFY2(!fixture.isEmpty(), "terminal/potential fixture project not found");
+
+		QString xml = QString::fromUtf8(CliTestUtils::readFile(fixture));
+		QVERIFY2(!xml.isEmpty(), "fixture content not readable");
+		const QString wire = QStringLiteral("num=\"W005\"");
+		QVERIFY2(xml.contains(wire), "expected W005 conductor XML not found in fixture");
+		xml.replace(wire, QStringLiteral("num=\"\""));
+
+		QTemporaryDir dir;
+		QVERIFY(dir.isValid());
+		const QString variant = writeFixtureVariant(
+			dir,
+			QStringLiteral("empty_terminal_potential_wire_number.qet"),
+			xml);
+		QVERIFY2(!variant.isEmpty(), "empty wire-number variant write failed");
+
+		const QString export_path = dir.filePath(QStringLiteral("mam_terminal_potential_warnings.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-terminal-potential"),
+			variant,
+			export_path
+		});
+		QCOMPARE(result.exit_code, 0);
+		QVERIFY(result.stdout_text.contains(QStringLiteral("Exported 7 MAM Terminal/Potential conductor(s), 1 warning row(s)")));
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+		QCOMPARE(rows.size(), 8);
+
+		const QHash<QString, QString> warning_row = rowByEndpoints(
+			rows,
+			QStringLiteral("v2_transformer_2w_primary-delta_secondary-wye_g"),
+			QStringLiteral("v2_circuit_breaker"));
+		QVERIFY(!warning_row.isEmpty());
+		QCOMPARE(warning_row.value(QStringLiteral("wire_number")), QString());
+		QVERIFY2(!warning_row.value(QStringLiteral("conductor_uuid")).isEmpty(), "warning row should keep conductor identity");
+		QCOMPARE(warning_row.value(QStringLiteral("potential_wire_number")), QString());
+		QCOMPARE(warning_row.value(QStringLiteral("potential_conductor_count")), QStringLiteral("1"));
+		QCOMPARE(warning_row.value(QStringLiteral("potential_terminal_count")), QStringLiteral("2"));
+		QCOMPARE(warning_row.value(QStringLiteral("status")), QStringLiteral("WARNING"));
+		QCOMPARE(warning_row.value(QStringLiteral("warnings")), QStringLiteral("empty potential wire number"));
 	}
 };
 

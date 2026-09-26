@@ -35,6 +35,7 @@ Next concrete slices:
 - Terminal/Potential MAM CSV fields are now specified in `Spec_MAM_Report_ReadOnly.md`. The next implementable slice is `--export-mam-terminal-potential`, a semicolon detail CSV per conductor over existing live potential traversal and conductor endpoint identity facts.
 - Keep the first Terminal/Potential report intentionally narrow: wire/conductor UUID, folio, endpoint labels/UUIDs/terminal names, potential group wire number, potential conductor count, potential terminal count, status, and warnings. Do not merge PLC, Contact/CrossRef, terminal-strip, cable/core, UI, persistence, XML schema, Device/Core migration, runtime, or package semantics into this table.
 - The first Terminal/Potential MAM CSV implementation is now in place as `--export-mam-terminal-potential`, with focused fixture coverage in `tst_mam_terminal_potential_export`. It stays read-only and reports existing conductor/potential facts only.
+- Warning coverage for `--export-mam-terminal-potential` now includes a test-only empty-wire-number fixture variant and verifies the existing export-level `empty potential wire number` diagnostic without adding terminal-strip, cable/core, UI, persistence, XML schema, Device/Core, runtime, package, or repair semantics.
 
 Latest PLC projection stabilization:
 - `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.

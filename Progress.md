@@ -205,6 +205,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Added the first Terminal/Potential MAM read-only export slice on 2026-09-26: `--export-mam-terminal-potential` writes one semicolon CSV row per conductor with endpoint identity and potential-group counts.
   The export uses the same live potential traversal boundary as `--export-nets` and does not change UI, persistence, XML schema, Device/Core ownership, runtime, packaging, or repair behavior.
   Focused CLI coverage is in `tst_mam_terminal_potential_export`, using the existing workflow export fixture.
+- Added a small warning-case coverage slice for `--export-mam-terminal-potential` on 2026-09-26: the CLI test now derives an empty-wire-number variant from the existing workflow export fixture and verifies exported `WARNING` status, preserved endpoint/conductor evidence, and warning text.
+  This remains test-only coverage over existing export-level diagnostics; no product behavior, UI, persistence, XML schema, Device/Core, runtime, packaging, or repair behavior changed.
 
 ## In Progress
 - None.
