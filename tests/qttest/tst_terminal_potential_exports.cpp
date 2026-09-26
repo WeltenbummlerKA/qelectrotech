@@ -180,24 +180,34 @@ private slots:
 		const int from_terminal_index = wiring_rows.first().indexOf(QStringLiteral("from_terminal"));
 		const int to_element_index = wiring_rows.first().indexOf(QStringLiteral("to_element_label"));
 		const int to_terminal_index = wiring_rows.first().indexOf(QStringLiteral("to_terminal"));
+		const int conductor_uuid_index = wiring_rows.first().indexOf(QStringLiteral("conductor_uuid"));
 		QVERIFY(wire_index >= 0);
 		QVERIFY(from_element_index >= 0);
 		QVERIFY(from_terminal_index >= 0);
 		QVERIFY(to_element_index >= 0);
 		QVERIFY(to_terminal_index >= 0);
+		QVERIFY(conductor_uuid_index >= 0);
 
 		const QMap<QString, QSet<QString>> expected_wiring = expectedWiringTerminals();
+		QSet<QString> conductor_uuids;
 		for (int i = 1; i < wiring_rows.size(); ++i) {
 			const QStringList row = wiring_rows.at(i);
 			const QString wire = row.at(wire_index);
 			QVERIFY2(expected_wiring.contains(wire),
 					 qPrintable(QStringLiteral("unexpected wiring wire number '%1'").arg(wire)));
+			const QString conductor_uuid = row.at(conductor_uuid_index);
+			QVERIFY2(!conductor_uuid.isEmpty(),
+					 qPrintable(QStringLiteral("empty conductor uuid for wire '%1'").arg(wire)));
+			QVERIFY2(!conductor_uuids.contains(conductor_uuid),
+					 qPrintable(QStringLiteral("duplicate conductor uuid '%1'").arg(conductor_uuid)));
+			conductor_uuids.insert(conductor_uuid);
 			const QSet<QString> actual_terminals {
 				row.at(from_terminal_index),
 				row.at(to_terminal_index),
 			};
 			QCOMPARE(actual_terminals, expected_wiring.value(wire));
 		}
+		QCOMPARE(conductor_uuids.size(), expected_wires.size());
 
 		const QList<QStringList> cables_rows =
 			CliTestUtils::parseSemicolonCsv(QString::fromUtf8(CliTestUtils::readFile(cables_path)));
