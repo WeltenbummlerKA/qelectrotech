@@ -27,6 +27,7 @@ Next concrete slices:
 - Terminal-strip source-of-truth/read-only evidence is documented in `Decision_Terminal_Strip_ReadOnly_Boundary.md`; the only currently justified next strip slice is a test-only XML load/resave regression if its fixture is derived from existing code structure.
 - The first terminal-strip regression slice is now covered by `tst_terminalstrip_roundtrip`: its fixture is explicitly synthetic/provisional, uses embedded terminal elements plus project-level `<terminal_strips>`, and only asserts read-only load/resave preservation of strip membership and bridge references.
 - The latest terminal-strip regression slice extends the same test to strip metadata: `installation`, `location`, `name`, `comment`, and `description` are now pinned across original fixture load plus first and second `--resave` output.
+- The current terminal-strip regression also pins physical-terminal grouping, so a later load/save regression cannot silently flatten the two physical terminals into a different layout while preserving only the same real-terminal UUID set.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
 
 Latest PLC projection stabilization:

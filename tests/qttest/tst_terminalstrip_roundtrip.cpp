@@ -68,19 +68,30 @@ QDomElement onlyChildElement(const QDomElement &parent, const QString &tag_name)
 	return nodes.at(0).toElement();
 }
 
-QStringList terminalStripRealTerminalUuids(const QDomElement &terminal_strip)
+QVector<QStringList> terminalStripPhysicalTerminalUuids(const QDomElement &terminal_strip)
 {
-	QStringList uuids;
+	QVector<QStringList> physical_terminals;
 	const QDomElement layout = terminal_strip.firstChildElement(QStringLiteral("layout"));
 	for (QDomElement physical = layout.firstChildElement(QStringLiteral("physical_terminal"));
 		 !physical.isNull();
 		 physical = physical.nextSiblingElement(QStringLiteral("physical_terminal"))) {
+		QStringList real_terminal_uuids;
 		for (QDomElement real = physical.firstChildElement(QStringLiteral("real_terminal"));
 			 !real.isNull();
 			 real = real.nextSiblingElement(QStringLiteral("real_terminal"))) {
-			uuids << real.attribute(QStringLiteral("element_uuid"));
+			real_terminal_uuids << real.attribute(QStringLiteral("element_uuid"));
 		}
+		physical_terminals.append(real_terminal_uuids);
 	}
+	return physical_terminals;
+}
+
+QStringList terminalStripRealTerminalUuids(const QDomElement &terminal_strip)
+{
+	QStringList uuids;
+	const QVector<QStringList> physical_terminals = terminalStripPhysicalTerminalUuids(terminal_strip);
+	for (const QStringList &physical_terminal : physical_terminals)
+		uuids.append(physical_terminal);
 	return uuids;
 }
 
@@ -119,6 +130,13 @@ void verifySyntheticTerminalStrip(const QDomDocument &doc)
 			 QStringLiteral("Synthetic provisional terminal-strip regression fixture derived from QET terminal-strip XML/code structure."));
 	QCOMPARE(informations.value(QStringLiteral("description")),
 			 QStringLiteral("Temporary MAM test fixture; not final domain truth."));
+
+	const QVector<QStringList> physical_terminals = terminalStripPhysicalTerminalUuids(strip);
+	QCOMPARE(physical_terminals.size(), 2);
+	QCOMPARE(physical_terminals.at(0),
+			 QStringList({QStringLiteral("{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1}")}));
+	QCOMPARE(physical_terminals.at(1),
+			 QStringList({QStringLiteral("{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2}")}));
 
 	const QStringList real_terminal_uuids = terminalStripRealTerminalUuids(strip);
 	QCOMPARE(real_terminal_uuids,
