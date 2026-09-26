@@ -53,6 +53,8 @@ struct PlcIoProjection
 	bool out_of_range_group_index = false;
 	bool empty_address = false;
 	bool terminal_label_count_mismatch = false;
+	bool stale_plc_copy = false;
+	QStringList stale_plc_copy_fields;
 	QStringList warnings;
 };
 

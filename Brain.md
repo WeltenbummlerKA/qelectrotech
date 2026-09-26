@@ -24,6 +24,10 @@ Next concrete slices:
 - Add terminal/potential/export-equivalence coverage before deeper terminal-strip or cable semantics.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
 
+Latest PLC projection stabilization:
+- `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.
+- If those copied values differ from the resolved PLC master IO row, the service emits deterministic read-only stale-copy warning fields. It does not repair, persist, relink, or change UI behavior.
+
 Open decisions:
 - Whether `mam/qet-projections-runtime-qa` stays the long-lived work branch or becomes part of a private MAM main branch.
 - Whether duplicate/contact assignment eventually becomes a dedicated domain object or remains read-only projection plus diagnostics.

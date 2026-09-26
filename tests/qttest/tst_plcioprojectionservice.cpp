@@ -18,6 +18,7 @@
 #include <QtTest>
 
 #include "plcioprojectionservice.h"
+#include "qetinformation.h"
 #include "qetmessagebox.h"
 #include "qetproject.h"
 
@@ -82,6 +83,28 @@ QString plcMasterDataXml()
 		"</plcMasterData>");
 }
 
+QString plcSlaveInfoXml(const QString &label, const QString &address, const QString &function)
+{
+	return QStringLiteral(
+		"<elementInformations>"
+		"<elementInformation name=\"label\" show=\"1\">%1</elementInformation>"
+		"<elementInformation name=\"plc_type\" show=\"1\">%2</elementInformation>"
+		"<elementInformation name=\"plc_address\" show=\"1\">%3</elementInformation>"
+		"<elementInformation name=\"plc_function\" show=\"1\">%4</elementInformation>"
+		"<elementInformation name=\"plc_comment\" show=\"1\">Panel button</elementInformation>"
+		"<elementInformation name=\"plc_tc\" show=\"1\">3</elementInformation>"
+		"<elementInformation name=\"plc_t1\" show=\"1\">1</elementInformation>"
+		"<elementInformation name=\"plc_t2\" show=\"1\">2</elementInformation>"
+		"<elementInformation name=\"plc_t3\" show=\"1\"></elementInformation>"
+		"<elementInformation name=\"plc_t4\" show=\"1\"></elementInformation>"
+		"</elementInformations>")
+			.arg(
+				label,
+				ElementData::translatedPlcIOType(ElementData::EntreeDigitale),
+				address,
+				function);
+}
+
 QString plcProjectXml(const QString &link_replacement)
 {
 	QString xml = readTextFile(fixturePath());
@@ -96,6 +119,24 @@ QString plcProjectXml(const QString &link_replacement)
 	xml.replace(
 		QStringLiteral("<link_uuid uuid=\"{33333333-3333-4333-8333-333333333333}\" group_index=\"1\"/>"),
 		link_replacement);
+	xml.replace(
+		QStringLiteral(
+			"<elementInformations>\n"
+			"                    <elementInformation name=\"label\" show=\"1\">KMS-NO</elementInformation>\n"
+			"                </elementInformations>"),
+		plcSlaveInfoXml(
+			QStringLiteral("KMS-NO"),
+			QStringLiteral("%I0.0"),
+			QStringLiteral("Start")));
+	xml.replace(
+		QStringLiteral(
+			"<elementInformations>\n"
+			"                    <elementInformation name=\"label\" show=\"1\">KMS-NC</elementInformation>\n"
+			"                </elementInformations>"),
+		plcSlaveInfoXml(
+			QStringLiteral("KMS-NC"),
+			QStringLiteral("%I0.0"),
+			QStringLiteral("Start")));
 	return xml;
 }
 
@@ -166,6 +207,8 @@ private slots:
 		QVERIFY(!start->out_of_range_group_index);
 		QVERIFY(!start->empty_address);
 		QVERIFY(start->terminal_label_count_mismatch);
+		QVERIFY(!start->stale_plc_copy);
+		QVERIFY(start->stale_plc_copy_fields.isEmpty());
 		QCOMPARE(
 			start->warnings,
 			QStringList({
@@ -178,6 +221,7 @@ private slots:
 		QCOMPARE(duplicate->linked_slave_label, QStringLiteral("KMS-NC"));
 		QVERIFY(duplicate->duplicate_group_index);
 		QVERIFY(duplicate->terminal_label_count_mismatch);
+		QVERIFY(!duplicate->stale_plc_copy);
 
 		const PlcIoProjection *run = projectionFor(projections, 1);
 		QVERIFY(run);
@@ -230,6 +274,41 @@ private slots:
 		QVERIFY(!bad_link->unlinked);
 		QVERIFY(!bad_link->duplicate_group_index);
 		QCOMPARE(bad_link->warnings, QStringList({QStringLiteral("group_index 99 out of range")}));
+	}
+
+	void staleSlavePlcCopyIsWarningOnly()
+	{
+		initHeadlessProjectLoad();
+
+		QString xml = plcProjectXml(QStringLiteral(
+			"<link_uuid uuid=\"{33333333-3333-4333-8333-333333333333}\" group_index=\"1\"/>"));
+		xml.replace(
+			QStringLiteral("<elementInformation name=\"plc_address\" show=\"1\">%I0.0</elementInformation>"),
+			QStringLiteral("<elementInformation name=\"plc_address\" show=\"1\">%I9.9</elementInformation>"));
+		QVERIFY2(!xml.isEmpty(), "PLC fixture XML not readable");
+
+		QTemporaryDir dir;
+		QVERIFY(dir.isValid());
+		const QString path = writeFixture(dir, xml);
+		QVERIFY2(!path.isEmpty(), "PLC fixture write failed");
+
+		QETProject project(path);
+		QCOMPARE(project.state(), QETProject::Ok);
+
+		PlcIoProjectionService service;
+		const QList<PlcIoProjection> projections = service.channels(project);
+
+		const PlcIoProjection *start = projectionFor(projections, 0, kNoSlaveUuid);
+		QVERIFY(start);
+		QVERIFY(start->stale_plc_copy);
+		QCOMPARE(start->stale_plc_copy_fields, QStringList({QETInformation::ELMT_PLC_ADDRESS}));
+		QCOMPARE(
+			start->warnings,
+			QStringList({
+				QStringLiteral("terminal label count 2 does not match terminal_count 3"),
+				QStringLiteral("stale plc copy fields: plc_address")
+			}));
+		QCOMPARE(start->address, QStringLiteral("%I0.0"));
 	}
 };
 

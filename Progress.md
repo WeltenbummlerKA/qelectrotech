@@ -161,6 +161,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - PLC warnings remain read-only and do not change UI, persistence, XML schema, Device/Core ownership, or migration behavior.
 - Upstream PR #1058 was closed and not merged; the fork work is no longer being tracked as the current upstream contribution path.
 - `origin/mam/qet-projections-runtime-qa` remains the secured fork branch state at `7efd85c52ffc14c96870ea50f968213d976e351f`.
+- Added a small read-only PLC stale-copy warning slice on 2026-09-26: `PlcIoProjectionService` now flags linked slave `plc_*` display/formula fields that differ from the resolved master IO row.
+- Extended `tst_plcioprojectionservice` with focused regression coverage for warning-only stale slave `plc_address` evidence.
 
 ## In Progress
 - None.

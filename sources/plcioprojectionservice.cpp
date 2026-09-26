@@ -88,6 +88,53 @@ void addIoWarnings(PlcIoProjection &projection, const ElementData::PlcIO &io)
 	}
 }
 
+void addStalePlcCopyWarning(
+	PlcIoProjection &projection,
+	Element *slave,
+	const ElementData::PlcIO &io)
+{
+	if (!slave) {
+		return;
+	}
+
+	const DiagramContext info = slave->elementInformations();
+	const QList<QPair<QString, QString>> expected_values = {
+		{QETInformation::ELMT_PLC_TYPE, ElementData::translatedPlcIOType(io.type)},
+		{QETInformation::ELMT_PLC_ADDRESS, io.address},
+		{QETInformation::ELMT_PLC_FUNCTION, io.functionText},
+		{QETInformation::ELMT_PLC_COMMENT, io.comment},
+		{QETInformation::ELMT_PLC_TC, QString::number(io.terminalCount)}
+	};
+
+	for (const auto &expected : expected_values) {
+		if (info.value(expected.first).toString() != expected.second) {
+			projection.stale_plc_copy_fields << expected.first;
+		}
+	}
+
+	const QStringList terminals = io.effectiveTerminals();
+	const QStringList terminal_keys = {
+		QETInformation::ELMT_PLC_T1,
+		QETInformation::ELMT_PLC_T2,
+		QETInformation::ELMT_PLC_T3,
+		QETInformation::ELMT_PLC_T4
+	};
+	for (int i = 0; i < terminal_keys.size(); ++i) {
+		const QString expected = i < terminals.size() ? terminals.at(i) : QString();
+		if (info.value(terminal_keys.at(i)).toString() != expected) {
+			projection.stale_plc_copy_fields << terminal_keys.at(i);
+		}
+	}
+
+	if (!projection.stale_plc_copy_fields.isEmpty()) {
+		projection.stale_plc_copy = true;
+		addWarning(
+			projection,
+			QStringLiteral("stale plc copy fields: %1")
+				.arg(projection.stale_plc_copy_fields.join(QStringLiteral(", "))));
+	}
+}
+
 QList<Element *> plcMastersInProject(QETProject &project)
 {
 	QList<Element *> result;
@@ -199,6 +246,7 @@ QList<PlcIoProjection> PlcIoProjectionService::channels(QETProject &project) con
 				projection.linked_slave_uuid = slave->uuid();
 				projection.linked_slave_label = elementLabel(slave);
 				projection.linked_slave_folio = folioOf(project, slave);
+				addStalePlcCopyWarning(projection, slave, plc_data.ios.at(index));
 				projection.duplicate_group_index = slaves.size() > 1;
 				if (projection.duplicate_group_index) {
 					addWarning(
