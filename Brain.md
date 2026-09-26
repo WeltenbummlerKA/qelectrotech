@@ -19,7 +19,6 @@ Architecture principles:
 
 Next concrete slices:
 - Confirm the private branch policy for `mam/qet-projections-runtime-qa`: continue dedicated branch or promote a private MAM mainline.
-- Re-audit current Contact/CrossRef and PLC IO Projection Services for strictly read-only behavior and deterministic diagnostics.
 - Add the smallest next PLC warning slice only if it can stay projection-derived; stale slave `plc_*` copy evidence and slave-terminal-count evidence are now covered.
 - Add terminal/potential/export-equivalence coverage before deeper terminal-strip or cable semantics.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
@@ -28,6 +27,8 @@ Latest PLC projection stabilization:
 - `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.
 - If those copied values differ from the resolved PLC master IO row, the service emits deterministic read-only stale-copy warning fields. It does not repair, persist, relink, or change UI behavior.
 - Linked PLC slave projections now expose observed slave terminal count and emit a warning when that count is below the PLC IO `terminalCount`; this remains read-only evidence only.
+- Re-audit result: no service/test correction is currently needed for Contact/CrossRef or PLC projection diagnostics. Contact flags (`group_index_resolves`, `duplicate_group_assignment`, assignment/master validation messages) and PLC flags (`duplicate_group_index`, `out_of_range_group_index`, `empty_address`, `terminal_label_count_mismatch`, `insufficient_slave_terminal_count`, `stale_plc_copy`) are stable enough for the current minimal diagnostic surface.
+- The current diagnostic boundary remains read-only: no UI behavior, XML schema, persistence, Device/Core ownership, runtime, packaging, or automatic repair path is changed by these services.
 
 Open decisions:
 - Whether `mam/qet-projections-runtime-qa` stays the long-lived work branch or becomes part of a private MAM main branch.

@@ -165,6 +165,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Extended `tst_plcioprojectionservice` with focused regression coverage for warning-only stale slave `plc_address` evidence.
 - Added the next smallest read-only PLC slave-terminal-count evidence slice on 2026-09-26: linked PLC slave projections now expose observed slave terminal count and warn when it is lower than the PLC IO `terminalCount`.
 - Extended `tst_plcioprojectionservice` coverage for the warning-only insufficient slave-terminal-count diagnostic.
+- Re-audited Contact/CrossRef and PLC IO projection diagnostics on 2026-09-26.
+  Warning/flag naming and messages are deterministic and intentionally read-only; PLC projections still use `PlcMasterData::ios` plus `group_index` as authority and treat slave `plc_*` values as stale-copy evidence only.
+  Existing focused QtTests cover contact duplicate/missing/out-of-range/type-mismatch diagnostics and PLC duplicate/out-of-range/empty-address/terminal-label/stale-copy/slave-terminal-count diagnostics.
 
 ## In Progress
 - None.
@@ -376,3 +379,4 @@ If runtime confidence beyond the successful user-controlled dev-bundle launch is
 - 2026-09-22: Documented that GUI remains unverified; the early Qt/Cocoa/AppKit crash report is a start-context/uninstalled-dev-bundle finding before project/CAE/PLC logic, and any runtime check belongs in a separate controlled Runtime-QA/installation slice.
 - 2026-09-26: Completed read-only Runtime-QA bundle inspection for `build/baseline/qelectrotech.app`; found a dev bundle with executable and Info.plist only, external Homebrew Qt dependencies, ad-hoc linker signature, and failing strict codesign verification; no GUI launch, install, code change, test implementation, commit, reset, push, or `/Applications` mutation was performed.
 - 2026-09-26: Recorded user-controlled manual `open -n build/baseline/qelectrotech.app` launch as successful; GUI startup is partially verified, the earlier Codex/ChatGPT crash remains a launch-context/dev-bundle finding, and clean install/deploy/codesign/packaging remain open.
+- 2026-09-26: Re-audited Contact/CrossRef and PLC IO projection diagnostics; no service/test correction was needed, and the current scope remains read-only projection/validation with no UI, persistence, XML schema, Core, runtime, or packaging change.
