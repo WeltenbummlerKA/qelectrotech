@@ -79,6 +79,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-links", "links"},
 		{"--export-mam-contact-crossref", "mam-contact-crossref"},
 		{"--export-mam-plc-io", "mam-plc-io"},
+		{"--export-mam-terminal-potential", "mam-terminal-potential"},
 		{"--info", "info"},
 		{"--check-elements", "check"},
 		{"--resave", "resave"},
@@ -546,6 +547,31 @@ QHash<Element *, int> folioIndex(QETProject &project)
 	return folio;
 }
 
+QHash<Diagram *, int> diagramFolioIndex(QETProject &project)
+{
+	QHash<Diagram *, int> folio;
+	int index = 0;
+	const QList<Diagram *> diagrams = project.diagrams();
+	for (Diagram *diagram : diagrams)
+		folio.insert(diagram, ++index);
+	return folio;
+}
+
+QString uuidString(const QUuid &uuid)
+{
+	return uuid.isNull() ? QString() : uuid.toString(QUuid::WithoutBraces);
+}
+
+QString terminalName(Terminal *terminal)
+{
+	return terminal ? terminal->name() : QString();
+}
+
+Element *terminalElement(Terminal *terminal)
+{
+	return terminal ? terminal->parentElement() : nullptr;
+}
+
 /// From-to wiring list: one row per conductor, each endpoint resolved to its
 /// element label and terminal name.
 ///
@@ -681,6 +707,116 @@ int exportNets(QETProject &project, const QString &output)
 	file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
 	file.close();
 	out << "Exported " << nets.size() << " net(s) -> " << output << "\n";
+	return 0;
+}
+
+/// MAM-specific terminal/potential report, one row per conductor.
+/// It stays read-only and uses the same live potential traversal as --export-nets.
+int exportMamTerminalPotential(QETProject &project, const QString &output)
+{
+	const QHash<Diagram *, int> folios = diagramFolioIndex(project);
+
+	QList<Conductor *> all_conductors;
+	const QList<Diagram *> diagrams = project.diagrams();
+	for (Diagram *diagram : diagrams)
+		all_conductors << diagram->conductors();
+
+	std::sort(all_conductors.begin(), all_conductors.end(), [](Conductor *left, Conductor *right) {
+		const QString left_key = left->properties().text
+			% QLatin1Char('|') % uuidString(left->uuid());
+		const QString right_key = right->properties().text
+			% QLatin1Char('|') % uuidString(right->uuid());
+		return left_key < right_key;
+	});
+
+	static const QStringList columns {
+		"wire_number", "conductor_uuid", "folio",
+		"from_element_label", "from_element_uuid", "from_terminal",
+		"to_element_label", "to_element_uuid", "to_terminal",
+		"potential_wire_number", "potential_conductor_count",
+		"potential_terminal_count", "status", "warnings"
+	};
+
+	QString csv = columns.join(";") % "\n";
+	int warnings = 0;
+	for (Conductor *conductor : all_conductors) {
+		QList<Terminal *> terminals;
+		QSet<Conductor *> potential_conductors =
+			conductor->relatedPotentialConductors(true, &terminals);
+		potential_conductors.insert(conductor);
+		if (conductor->terminal1)
+			terminals << conductor->terminal1;
+		if (conductor->terminal2)
+			terminals << conductor->terminal2;
+
+		QStringList potential_wire_numbers;
+		for (Conductor *potential_conductor : potential_conductors) {
+			const QString wire = potential_conductor->properties().text;
+			if (!wire.isEmpty())
+				potential_wire_numbers << wire;
+		}
+		potential_wire_numbers.removeDuplicates();
+		potential_wire_numbers.sort();
+
+		QSet<Terminal *> unique_terminals;
+		for (Terminal *terminal : terminals)
+			if (terminal)
+				unique_terminals.insert(terminal);
+
+		Element *from_element = terminalElement(conductor->terminal1);
+		Element *to_element = terminalElement(conductor->terminal2);
+		QStringList row_warnings;
+		if (conductor->uuid().isNull())
+			row_warnings << QStringLiteral("empty conductor_uuid");
+		if (!conductor->terminal1 || !conductor->terminal2)
+			row_warnings << QStringLiteral("missing conductor endpoint");
+		if (!from_element || elementLabel(from_element).isEmpty())
+			row_warnings << QStringLiteral("empty from_element_label");
+		if (!to_element || elementLabel(to_element).isEmpty())
+			row_warnings << QStringLiteral("empty to_element_label");
+		if (conductor->properties().text.isEmpty() && potential_wire_numbers.isEmpty())
+			row_warnings << QStringLiteral("empty potential wire number");
+
+		const QString status = row_warnings.isEmpty()
+			? QStringLiteral("OK")
+			: QStringLiteral("WARNING");
+		if (!row_warnings.isEmpty())
+			++warnings;
+
+		const QStringList values {
+			conductor->properties().text,
+			uuidString(conductor->uuid()),
+			QString::number(folios.value(conductor->diagram(), 0)),
+			from_element ? elementLabel(from_element) : QString(),
+			from_element ? uuidString(from_element->uuid()) : QString(),
+			terminalName(conductor->terminal1),
+			to_element ? elementLabel(to_element) : QString(),
+			to_element ? uuidString(to_element->uuid()) : QString(),
+			terminalName(conductor->terminal2),
+			potential_wire_numbers.value(0),
+			QString::number(potential_conductors.size()),
+			QString::number(unique_terminals.size()),
+			status,
+			row_warnings.join(QStringLiteral(" | "))
+		};
+
+		QStringList escaped;
+		for (const QString &value : values)
+			escaped << csvField(value);
+		csv += escaped.join(QLatin1Char(';')) % "\n";
+	}
+
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << csv;
+	file.close();
+	out << "Exported " << all_conductors.size()
+		<< " MAM Terminal/Potential conductor(s), "
+		<< warnings << " warning row(s) -> " << output << "\n";
 	return 0;
 }
 
@@ -1059,6 +1195,8 @@ int run(const QStringList &args)
 		return exportMamContactCrossRef(project, output);
 	if (format == "mam-plc-io")
 		return exportMamPlcIo(project, output);
+	if (format == "mam-terminal-potential")
+		return exportMamTerminalPotential(project, output);
 	if (format == "resave")
 		return resaveProject(project, output);
 	if (format == "settb")

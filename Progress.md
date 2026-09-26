@@ -202,6 +202,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Added the Terminal/Potential MAM CSV field decision on 2026-09-26 in `Spec_MAM_Report_ReadOnly.md`.
   The selected next report is `--export-mam-terminal-potential` as a semicolon CSV over existing live conductor/potential graph evidence and conductor endpoint identities.
   It deliberately excludes terminal-strip membership/bridges, cable/core ownership, UI, persistence, XML schema, Device/Core migration, runtime, packaging, and repair behavior.
+- Added the first Terminal/Potential MAM read-only export slice on 2026-09-26: `--export-mam-terminal-potential` writes one semicolon CSV row per conductor with endpoint identity and potential-group counts.
+  The export uses the same live potential traversal boundary as `--export-nets` and does not change UI, persistence, XML schema, Device/Core ownership, runtime, packaging, or repair behavior.
+  Focused CLI coverage is in `tst_mam_terminal_potential_export`, using the existing workflow export fixture.
 
 ## In Progress
 - None.

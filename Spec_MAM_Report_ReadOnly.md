@@ -118,9 +118,9 @@ Bewusst nicht enthalten:
 - Potential-Isolator-Editorlogik, UI, Rendering, Klickflaechen.
 - XML-Schema-, Device-/Core-, Persistenz-, Migrations- oder Autorepair-Entscheidung.
 
-## Naechster implementierbarer Slice
+## Implementierter Terminal/Potential-Slice
 
-Der naechste kleine Slice ist `mam-terminal-potential` als CLI/CSV-Export ueber die bestehende Live-Graph-Potentiallogik und Leiterendpunktdaten.
+Der erste kleine Slice ist `mam-terminal-potential` als CLI/CSV-Export ueber die bestehende Live-Graph-Potentiallogik und Leiterendpunktdaten.
 
 Minimalfelder:
 
@@ -133,6 +133,10 @@ Minimalfelder:
 Nicht in diesem Slice:
 
 - Terminal-strip facts, bridge semantics, cable/core ownership, UI, persistence, XML schema, runtime/package work.
+
+## Naechster implementierbarer Slice
+
+Ein naechster kleiner Slice kann fokussierte Warning-Coverage fuer `mam-terminal-potential` ergaenzen, etwa eine temporaere Fixture-Variante mit leerer Leiternummer oder fehlendem Endpunkt, ohne die Reportfelder zu erweitern.
 
 ## Vorheriger implementierter Slice
 
