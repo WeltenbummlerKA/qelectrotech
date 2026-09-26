@@ -31,8 +31,8 @@ Next concrete slices:
 - The first MAM-specific report/export slice is now `--export-mam-plc-io`: a CLI-only semicolon CSV backed by `PlcIoProjectionService`, exposing PLC master row facts, linked slave evidence, status, and deterministic projection warnings without UI, persistence, XML schema, Device/Core, runtime, or packaging changes.
 - `Spec_MAM_Report_ReadOnly.md` now fixes the first combined MAM report boundary: internal MAM CAE/project review and CSV-based regression evidence, read-only CLI/CSV first, separate PLC IO, Contact/CrossRef, Terminal/Potential, and later Summary CSV families.
 - The matching Contact/CrossRef projection CSV is now `--export-mam-contact-crossref`: it reports master/slave identity, `group_index`, resolved group metadata, slave contact metadata, status, and deterministic warnings from `ContactCrossRefProjectionService`.
-- Warning-case coverage for `--export-mam-contact-crossref` now reuses the existing master/slave fixture via a temporary duplicate `group_index` variant and verifies the exported `WARNING` rows without adding new production logic.
-- The next MAM report step should stay small: either specify the later Terminal/Potential CSV fields or add another narrowly justified Contact/CrossRef export warning variant. Do not merge PLC, contact, and terminal-strip semantics into one wide table.
+- Warning-case coverage for `--export-mam-contact-crossref` now reuses the existing master/slave fixture via temporary duplicate, missing, out-of-range, and type-mismatch `group_index` variants and verifies the exported `WARNING` rows without adding new production logic.
+- The next MAM report step should stay small: specify the later Terminal/Potential CSV fields rather than widening the existing PLC/contact exports. Do not merge PLC, contact, and terminal-strip semantics into one wide table.
 
 Latest PLC projection stabilization:
 - `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.

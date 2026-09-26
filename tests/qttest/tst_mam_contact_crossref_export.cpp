@@ -190,6 +190,96 @@ private slots:
 		QCOMPARE(duplicate_row.value(QStringLiteral("status")), QStringLiteral("WARNING"));
 		QCOMPARE(duplicate_row.value(QStringLiteral("warnings")), QStringLiteral("duplicate group_index 0 assignment"));
 	}
+
+	void exportsInvalidGroupIndexProjectionWarnings()
+	{
+		const QString fixture = QFINDTESTDATA("fixtures/master_slave_links_group_index_minimal.qet");
+		QVERIFY2(!fixture.isEmpty(), "master/slave projection fixture project not found");
+
+		const QString original = QString::fromUtf8(CliTestUtils::readFile(fixture));
+		QVERIFY2(!original.isEmpty(), "fixture content not readable");
+		const QString nc_link = QStringLiteral(
+			"<link_uuid uuid=\"{33333333-3333-4333-8333-333333333333}\" group_index=\"1\"/>");
+		QVERIFY2(original.contains(nc_link), "expected NC link XML not found in fixture");
+
+		struct Variant {
+			QString name;
+			QString replacement;
+			QString expected_group_index;
+			QString expected_resolves;
+			QString expected_group_type;
+			QString expected_status;
+			QString expected_warning;
+			int expected_warning_rows;
+		};
+
+		const QList<Variant> variants {
+			{
+				QStringLiteral("missing_group_index.qet"),
+				QStringLiteral("<link_uuid uuid=\"{33333333-3333-4333-8333-333333333333}\"/>"),
+				QStringLiteral("-1"),
+				QStringLiteral("false"),
+				QString(),
+				QStringLiteral("WARNING"),
+				QStringLiteral("missing group_index"),
+				1
+			},
+			{
+				QStringLiteral("out_of_range_group_index.qet"),
+				QStringLiteral("<link_uuid uuid=\"{33333333-3333-4333-8333-333333333333}\" group_index=\"99\"/>"),
+				QStringLiteral("99"),
+				QStringLiteral("false"),
+				QString(),
+				QStringLiteral("WARNING"),
+				QStringLiteral("out-of-range group_index 99"),
+				1
+			},
+			{
+				QStringLiteral("type_mismatch_group_index.qet"),
+				QStringLiteral("<link_uuid uuid=\"{33333333-3333-4333-8333-333333333333}\" group_index=\"0\"/>"),
+				QStringLiteral("0"),
+				QStringLiteral("true"),
+				QStringLiteral("NO"),
+				QStringLiteral("WARNING"),
+				QStringLiteral("slave contact type NC differs from group type NO"),
+				2
+			}
+		};
+
+		QTemporaryDir dir;
+		QVERIFY(dir.isValid());
+
+		for (const Variant &variant : variants) {
+			QString xml = original;
+			xml.replace(nc_link, variant.replacement);
+			const QString path = writeFixtureVariant(dir, variant.name, xml);
+			QVERIFY2(!path.isEmpty(), qPrintable(QStringLiteral("variant write failed for %1").arg(variant.name)));
+
+			const QString export_path = dir.filePath(variant.name + QStringLiteral(".csv"));
+			const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+				QStringLiteral("--export-mam-contact-crossref"),
+				path,
+				export_path
+			});
+			QCOMPARE(result.exit_code, 0);
+			QVERIFY2(result.stdout_text.contains(QStringLiteral("Exported 2 MAM Contact/CrossRef assignment(s), %1 warning row(s)")
+							.arg(variant.expected_warning_rows)),
+					 qPrintable(result.stdout_text));
+
+			const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+				QString::fromUtf8(CliTestUtils::readFile(export_path)));
+			QCOMPARE(rows.size(), 3);
+
+			const QHash<QString, QString> warning_row = rowBySlaveLabel(rows, QStringLiteral("KMS-NC"));
+			QVERIFY2(!warning_row.isEmpty(), qPrintable(QStringLiteral("KMS-NC row missing for %1").arg(variant.name)));
+			QCOMPARE(warning_row.value(QStringLiteral("group_index")), variant.expected_group_index);
+			QCOMPARE(warning_row.value(QStringLiteral("group_index_resolves")), variant.expected_resolves);
+			QCOMPARE(warning_row.value(QStringLiteral("group_type")), variant.expected_group_type);
+			QCOMPARE(warning_row.value(QStringLiteral("status")), variant.expected_status);
+			QVERIFY2(warning_row.value(QStringLiteral("warnings")).contains(variant.expected_warning),
+					 qPrintable(warning_row.value(QStringLiteral("warnings"))));
+		}
+	}
 };
 
 QTEST_MAIN(tst_mam_contact_crossref_export)

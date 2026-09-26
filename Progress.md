@@ -197,6 +197,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
   Focused CLI coverage is in `tst_mam_contact_crossref_export`, using the existing master/slave group-index fixture.
 - Added a small warning-case coverage slice for `--export-mam-contact-crossref` on 2026-09-26: the CLI test now derives a duplicate `group_index` variant from the existing fixture and verifies exported `WARNING` status, duplicate flag, and warning text.
   This is test-only coverage over existing `ContactCrossRefProjectionService` diagnostics; no product, UI, persistence, XML schema, Device/Core, runtime, packaging, or repair behavior changed.
+- Added the next small `--export-mam-contact-crossref` warning coverage slice on 2026-09-26: the CLI test now exports missing, out-of-range, and type-mismatch `group_index` variants derived from the same fixture.
+  This also remains test-only coverage over existing projection warnings; no product behavior or persisted project data changed.
 
 ## In Progress
 - None.
