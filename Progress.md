@@ -176,6 +176,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
   This is test-only evidence for conductor identity coverage and does not change production export logic, UI, persistence, XML schema, Device/Core ownership, runtime, or package behavior.
 - Added another small terminal/potential/export-equivalence coverage slice on 2026-09-26: `tst_terminal_potential_exports` now pins the expected `--export-wiring` and `--export-cables` CSV headers used by the endpoint/identity comparisons.
   This remains test-only export contract coverage and does not change production export logic, UI, persistence, XML schema, Device/Core ownership, runtime, or package behavior.
+- Added terminal-strip source-of-truth/read-only decision evidence on 2026-09-26 in `Decision_Terminal_Strip_ReadOnly_Boundary.md`.
+  Current evidence keeps terminal strips project-owned through `QETProject` and `TerminalStrip`, with `RealTerminal` membership resolved by placed terminal `Element` UUIDs and bridges resolved back through loaded strip real terminals.
+  This is documentation only; no product code, UI, persistence, XML schema, Device/Core, runtime, or package behavior changed.
 
 ## In Progress
 - None.
@@ -218,6 +221,7 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Prefer read-only diagnostics and fixtures that compare live graph, XML-derived exports, and SQLite-derived reports.
 - Keep `PlcMasterData::ios`, `ElementData`, current links, and conductor/terminal objects as observed sources until a later ownership decision is explicit.
 - No-Go: no early Device/Core rewrite, no inferred vendor-specific PLC rules, no terminal-strip/potential ownership change without tests and decision note.
+- Terminal-strip decision evidence now exists; a future test-only terminal-strip fixture may only cover existing project-level XML load/resave compatibility if it is derived directly from the documented code/XML structure.
 
 ### Phase 3 - MAM-specific Data, Export, Report Layer
 - Add MAM-specific reports/exports as a separate layer over stable projections where possible.

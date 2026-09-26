@@ -24,6 +24,7 @@ Next concrete slices:
 - The next terminal/potential/export-equivalence slice tightened that check to full endpoint identity: `--export-cables` rows are now compared as unordered `Composant:Borne` pairs against the database-backed `--export-wiring` rows for the same fixture.
 - The latest terminal/potential/export-equivalence slice adds conductor identity evidence: `--export-wiring` must expose one non-empty, unique `conductor_uuid` per expected conductor in the workflow fixture.
 - The following small export-contract slice pins the `--export-wiring` and `--export-cables` CSV headers consumed by those endpoint and identity comparisons.
+- Terminal-strip source-of-truth/read-only evidence is documented in `Decision_Terminal_Strip_ReadOnly_Boundary.md`; the only currently justified next strip slice is a test-only XML load/resave regression if its fixture is derived from existing code structure.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
 
 Latest PLC projection stabilization:
@@ -39,6 +40,13 @@ Open decisions:
 - Whether PLC semantics stop at warning/report evidence or later become a first-class PLC/device model.
 - Whether terminal strips become part of electrical potential semantics or remain a separate project/report domain until proven otherwise.
 - Whether future MAM report/export data should read live graph, derived SQLite, XML-derived exporters, or a new tested projection layer.
+
+Terminal-strip decision evidence:
+- `QETProject` owns terminal strips as project-level objects and serializes them below `<terminal_strips>`.
+- `TerminalStrip` owns strip data, ordered physical terminals, real terminal membership, and bridge objects.
+- `RealTerminal` persists membership by placed terminal element UUID, and `TerminalStrip::fromXml()` resolves those UUIDs through `ElementProvider::freeTerminal()`.
+- `TerminalStripBridge` persists bridge UUID/color and real-terminal element UUID references, then resolves through loaded strip real terminals.
+- Current evidence supports read-only projection/regression coverage over existing strip state, but not an electrical-potential, cable/core, UI, XML-schema, or migration ownership change.
 
 Risks:
 - A premature XML/Core migration would couple MAM needs to QET compatibility risk before semantics are stable.
