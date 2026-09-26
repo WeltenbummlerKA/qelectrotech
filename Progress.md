@@ -195,6 +195,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Added the next MAM-specific read-only report/export slice on 2026-09-26: `--export-mam-contact-crossref` writes a semicolon CSV from `ContactCrossRefProjectionService` with master/slave identity, `group_index`, group metadata, slave contact metadata, status, and warning text.
   The export consumes the existing read-only Contact/CrossRef projection service and does not change UI, persistence, XML schema, Device/Core ownership, runtime, packaging, or repair behavior.
   Focused CLI coverage is in `tst_mam_contact_crossref_export`, using the existing master/slave group-index fixture.
+- Added a small warning-case coverage slice for `--export-mam-contact-crossref` on 2026-09-26: the CLI test now derives a duplicate `group_index` variant from the existing fixture and verifies exported `WARNING` status, duplicate flag, and warning text.
+  This is test-only coverage over existing `ContactCrossRefProjectionService` diagnostics; no product, UI, persistence, XML schema, Device/Core, runtime, packaging, or repair behavior changed.
 
 ## In Progress
 - None.
