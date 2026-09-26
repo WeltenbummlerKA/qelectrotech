@@ -30,7 +30,8 @@ Next concrete slices:
 - The current terminal-strip regression also pins physical-terminal grouping, so a later load/save regression cannot silently flatten the two physical terminals into a different layout while preserving only the same real-terminal UUID set.
 - The first MAM-specific report/export slice is now `--export-mam-plc-io`: a CLI-only semicolon CSV backed by `PlcIoProjectionService`, exposing PLC master row facts, linked slave evidence, status, and deterministic projection warnings without UI, persistence, XML schema, Device/Core, runtime, or packaging changes.
 - `Spec_MAM_Report_ReadOnly.md` now fixes the first combined MAM report boundary: internal MAM CAE/project review and CSV-based regression evidence, read-only CLI/CSV first, separate PLC IO, Contact/CrossRef, Terminal/Potential, and later Summary CSV families.
-- The next report/export increment is the matching Contact/CrossRef projection CSV over `ContactCrossRefProjectionService`; do not merge PLC, contact, and terminal-strip semantics into one wide table.
+- The matching Contact/CrossRef projection CSV is now `--export-mam-contact-crossref`: it reports master/slave identity, `group_index`, resolved group metadata, slave contact metadata, status, and deterministic warnings from `ContactCrossRefProjectionService`.
+- The next MAM report step should stay small: either add warning-case coverage for `--export-mam-contact-crossref` or specify the later Terminal/Potential CSV fields. Do not merge PLC, contact, and terminal-strip semantics into one wide table.
 
 Latest PLC projection stabilization:
 - `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.

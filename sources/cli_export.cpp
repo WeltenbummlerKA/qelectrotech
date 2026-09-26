@@ -21,6 +21,7 @@
 #include "bordertitleblock.h"
 #include "conductornumexport.h"
 #include "conductorproperties.h"
+#include "contactcrossrefprojectionservice.h"
 #include "dataBase/projectdatabase.h"
 #include "diagram.h"
 #include "diagramcontext.h"
@@ -76,6 +77,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-wiring", "wiring"},
 		{"--export-nets", "nets"},
 		{"--export-links", "links"},
+		{"--export-mam-contact-crossref", "mam-contact-crossref"},
 		{"--export-mam-plc-io", "mam-plc-io"},
 		{"--info", "info"},
 		{"--check-elements", "check"},
@@ -90,6 +92,22 @@ QString elementLabel(Element *element)
 {
 	const QString label = element->elementInformations()["label"].toString();
 	return label.isEmpty() ? element->name() : label;
+}
+
+QString contactTypeName(ElementData::SlaveState state)
+{
+	switch (state) {
+		case ElementData::NO: return QStringLiteral("NO");
+		case ElementData::NC: return QStringLiteral("NC");
+		case ElementData::SW: return QStringLiteral("SW");
+		case ElementData::Other: break;
+	}
+	return QStringLiteral("Other");
+}
+
+QString contactSubtypeName(ElementData::SlaveType type)
+{
+	return ElementData::slaveTypeToString(type);
 }
 
 /// Pixel rect of a diagram's border + title block (the printable page area).
@@ -718,6 +736,73 @@ int exportLinks(QETProject &project, const QString &output)
 	return 0;
 }
 
+/// MAM-specific Contact/CrossRef report from the read-only projection service.
+int exportMamContactCrossRef(QETProject &project, const QString &output)
+{
+	ContactCrossRefProjectionService service;
+	const QList<ContactAssignmentProjection> assignments = service.assignments(project);
+
+	static const QStringList columns {
+		"master_label", "master_uuid", "master_folio",
+		"slave_label", "slave_uuid", "slave_folio",
+		"group_index", "group_index_resolves",
+		"group_type", "group_subtype", "group_contact_count",
+		"group_terminal_count", "group_terminal_labels",
+		"slave_contact_type", "slave_contact_subtype", "slave_contact_count",
+		"duplicate_group_assignment", "status", "warnings"
+	};
+
+	QString csv = columns.join(";") % "\n";
+	int warnings = 0;
+	for (const ContactAssignmentProjection &assignment : assignments) {
+		const QString status = assignment.validation_messages.isEmpty()
+			? QStringLiteral("OK")
+			: QStringLiteral("WARNING");
+		if (!assignment.validation_messages.isEmpty())
+			++warnings;
+
+		const QStringList values {
+			assignment.master_label,
+			assignment.master_uuid.toString(QUuid::WithoutBraces),
+			QString::number(assignment.master_folio),
+			assignment.slave_label,
+			assignment.slave_uuid.toString(QUuid::WithoutBraces),
+			QString::number(assignment.slave_folio),
+			QString::number(assignment.group_index),
+			assignment.group_index_resolves ? QStringLiteral("true") : QStringLiteral("false"),
+			assignment.group_index_resolves ? contactTypeName(assignment.group.type) : QString(),
+			assignment.group_index_resolves ? contactSubtypeName(assignment.group.subtype) : QString(),
+			assignment.group_index_resolves ? QString::number(assignment.group.contact_count) : QString(),
+			assignment.group_index_resolves ? QString::number(assignment.group.terminal_count) : QString(),
+			assignment.group_index_resolves ? assignment.group.terminal_labels.join(QLatin1Char(',')) : QString(),
+			contactTypeName(assignment.slave_contact_type),
+			contactSubtypeName(assignment.slave_contact_subtype),
+			QString::number(assignment.slave_contact_count),
+			assignment.duplicate_group_assignment ? QStringLiteral("true") : QStringLiteral("false"),
+			status,
+			assignment.validation_messages.join(QStringLiteral(" | "))
+		};
+
+		QStringList escaped;
+		for (const QString &value : values)
+			escaped << csvField(value);
+		csv += escaped.join(QLatin1Char(';')) % "\n";
+	}
+
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << csv;
+	file.close();
+	out << "Exported " << assignments.size()
+		<< " MAM Contact/CrossRef assignment(s), "
+		<< warnings << " warning row(s) -> " << output << "\n";
+	return 0;
+}
+
 /// MAM-specific PLC IO report from the read-only PLC projection service.
 int exportMamPlcIo(QETProject &project, const QString &output)
 {
@@ -970,6 +1055,8 @@ int run(const QStringList &args)
 		return exportNets(project, output);
 	if (format == "links")
 		return exportLinks(project, output);
+	if (format == "mam-contact-crossref")
+		return exportMamContactCrossRef(project, output);
 	if (format == "mam-plc-io")
 		return exportMamPlcIo(project, output);
 	if (format == "resave")
