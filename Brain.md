@@ -1,7 +1,7 @@
 # Brain
 
 ## Project Vision
-Build a professional, data-driven electrical CAE system using QElectroTech as the technical starting point, without cloning one specific commercial CAE product.
+Build a professional, data-driven electrical CAE system using QElectroTech as the technical starting point, now privately/MAM-internally in the fork rather than as the current upstream contribution path.
 
 ## CAE Reference Matrix
 Phase 1 CAE reference analysis is documented in `CAE_Reference_Matrix.md`.

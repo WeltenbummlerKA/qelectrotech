@@ -83,10 +83,10 @@ Next recommended task:
 - If explicitly approved, implement a narrow read-only projection prototype with direct QtTest coverage. Do not change XML persistence, CrossRef rendering, CLI/export behavior, or Device/Function ownership in that slice.
 
 ## Current Phase
-PLC/CAE feature work paused for documentation-only status correction.
+Private/MAM-internal fork direction after upstream PR closure.
 
 ## Current Objective
-Keep interactive GUI/runtime status separate from PLC/CAE feature work and document the next optional Runtime-QA/installation slice.
+Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the private branch strategy before further MAM-only slices.
 
 ## Completed
 - Local repository inspected non-destructively on 2026-09-21.
@@ -159,11 +159,15 @@ Keep interactive GUI/runtime status separate from PLC/CAE feature work and docum
 - Affected CLI-test regression verification passed for `tst_conductorselfretrace`, `tst_cli_roundtrip_xml`, `tst_cli_export_equivalence`, and `tst_terminal_potential_exports`.
 - Completed and committed the Contact Projection, PLC IO Projection, Duplicate Validation, and PLC Warning-Spec/-Extension slices through `86c5fc9076d295044c41f489e95162b095dfdc8a`.
 - PLC warnings remain read-only and do not change UI, persistence, XML schema, Device/Core ownership, or migration behavior.
+- Upstream PR #1058 was closed and not merged; the fork work is no longer being tracked as the current upstream contribution path.
+- `origin/mam/qet-projections-runtime-qa` remains the secured fork branch state at `7efd85c52ffc14c96870ea50f968213d976e351f`.
 
 ## In Progress
 - None.
 
 ## Pending
+- Decide whether the private/MAM-specific fork direction should continue on a private main branch or stay on a dedicated work branch; after that decision, further MAM slices should happen only in the fork.
+- Keep upstream as a reference/source for occasional updates, not as the current contribution target.
 - Decide later whether and how to mark the verified baseline.
 - Interactive GUI startup is partially verified: user-controlled manual `open -n build/baseline/qelectrotech.app` launch started successfully. Further smoke behavior should only run with the user present for any macOS permission prompts.
 - A later optional Runtime-QA/installation slice may verify startup interactively, but it must be handled separately from PLC/CAE feature work.
