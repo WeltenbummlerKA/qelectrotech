@@ -31,7 +31,7 @@ Die kombinierte Report-Familie bleibt fachlich getrennt und kann spaeter durch e
 
 - `mam-plc-io`: bestehender PLC-IO-Kanalreport aus `PlcIoProjectionService`.
 - `mam-contact-crossref`: naechster kleiner Report ueber `ContactCrossRefProjectionService`, mit Master-/Slave-Zuordnung, Gruppenindex, Gruppenmetadaten und Warnungen.
-- `mam-terminal-potential`: spaeterer Report fuer Terminal-, Leiter-, Potential- und Terminal-Strip-Kontext, erst nach eigener Feldentscheidung.
+- `mam-terminal-potential`: naechster Report fuer Terminal-, Leiter- und Potential-Kontext, aus bestehenden Live-Graph- und Export-/Datenbank-Fakten, ohne Terminal-Strip-Ownership zu behaupten.
 - `mam-summary`: spaeterer Uebersichtsreport mit Zaehlern und Warnungsgruppen, nicht als Ersatz fuer die Detail-CSVs.
 
 Ein zukuenftiger kombinierter Export darf mehrere CSV-Dateien schreiben oder eine klar benannte Summary ergaenzen. Er soll die Detailtabellen nicht zu einer breiten Misch-Tabelle verschmelzen.
@@ -71,9 +71,72 @@ Getrennt bleiben:
 - Report-/Export-Schicht und QET-Core/Device-/XML-/UI-Ebene.
 - Regressionsevidence und echte Runtime-/Packaging-/GUI-QA.
 
+## Terminal/Potential-CSV-Entscheidung
+
+Ziel und Nutzung:
+
+- `mam-terminal-potential` dient der internen MAM-CAE-Pruefung, ob Leiter, Endpunkte und elektrische Potentialgruppen aus dem geladenen Projekt konsistent auswertbar sind.
+- Die CSV soll einen stabilen, menschenlesbaren Vergleich zwischen Potential-/Netzsicht und vorhandener Verdrahtungsliste ermoeglichen.
+- Der erste Slice bleibt eine Detailtabelle pro Leiter/Conductor, nicht Terminal-Strip-, Kabel- oder Summary-Report.
+
+Source-of-truth-Grenzen:
+
+- Elektrische Potentiale kommen aus dem bestehenden Live-Graph (`Conductor::relatedPotentialConductors()`), wie bei `--export-nets`.
+- Leiter-/Endpunktidentitaet kommt aus den bestehenden `Conductor`/`Terminal`/`Element`-Objekten und darf mit Datenbank-/Wiring-Export-Fakten verglichen werden.
+- `--export-wiring`, `--export-cables`, `--export-wires` und `--export-nets` bleiben bestehende Referenzflaechen; der MAM-Report darf diese Fakten zusammenfuehren, aber keine Reparatur oder neue Autoritaet erzeugen.
+- Terminal strips bleiben bewusst getrennt: `QETProject`/`TerminalStrip`-Mitgliedschaft ist dokumentierte read-only Evidenz, aber nicht automatisch elektrische Potential-Wahrheit.
+
+CLI-/Dateivorschlag:
+
+- Neuer CLI-Flag: `--export-mam-terminal-potential <project.qet> <output.csv>`.
+- Format: Semikolon-CSV wie die bestehenden MAM-Reports.
+- Familie: eigenstaendige Detaildatei `mam-terminal-potential`, spaeter optional durch einen Sammelaufruf neben PLC und Contact/CrossRef exportierbar.
+
+Pflichtfelder und IDs fuer den ersten Slice:
+
+- `wire_number`: sichtbarer Leitertext bzw. Potential-Leiternummer, leer erlaubt.
+- `conductor_uuid`: bestehende Leiter-UUID ohne geschweifte Klammern.
+- `folio`: QET-Folioindex des Leiters.
+- `from_element_label`, `from_element_uuid`, `from_terminal`: erster Leiterendpunkt.
+- `to_element_label`, `to_element_uuid`, `to_terminal`: zweiter Leiterendpunkt.
+- `potential_wire_number`: kleinster/nutzbarer nichtleerer Leitertext der Potentialgruppe, analog Netzexport.
+- `potential_conductor_count`: Anzahl Leiter in der Potentialgruppe.
+- `potential_terminal_count`: Anzahl beobachteter Terminals in der Potentialgruppe.
+- `status`, `warnings`.
+
+Warning-/Status-Konventionen:
+
+- `OK`: Zeile ist auswertbar und hat keine beobachtete Inkonsistenz.
+- `WARNING`: mindestens eine read-only Auffaelligkeit.
+- Erste deterministische Warnungen: leere `conductor_uuid`, einseitig/fehlender Endpunkt, leere Endpunktlabels, und leerer `wire_number` wenn die Potentialgruppe keine nutzbare Leiternummer hat.
+- Warnungen bleiben Zeilentext, mit ` | ` getrennt, ohne Reparaturbehauptung.
+
+Bewusst nicht enthalten:
+
+- Terminal-Strip-Mitgliedschaft, Bruecken und Ebenen.
+- Kabel-/Adermodell, Busmodell, Artikel-/Klemmenleisten-Fertigungsausgabe.
+- Potential-Isolator-Editorlogik, UI, Rendering, Klickflaechen.
+- XML-Schema-, Device-/Core-, Persistenz-, Migrations- oder Autorepair-Entscheidung.
+
 ## Naechster implementierbarer Slice
 
-Der naechste kleine Slice ist `mam-contact-crossref` als CLI/CSV-Export ueber den vorhandenen `ContactCrossRefProjectionService`.
+Der naechste kleine Slice ist `mam-terminal-potential` als CLI/CSV-Export ueber die bestehende Live-Graph-Potentiallogik und Leiterendpunktdaten.
+
+Minimalfelder:
+
+- `wire_number`, `conductor_uuid`, `folio`
+- `from_element_label`, `from_element_uuid`, `from_terminal`
+- `to_element_label`, `to_element_uuid`, `to_terminal`
+- `potential_wire_number`, `potential_conductor_count`, `potential_terminal_count`
+- `status`, `warnings`
+
+Nicht in diesem Slice:
+
+- Terminal-strip facts, bridge semantics, cable/core ownership, UI, persistence, XML schema, runtime/package work.
+
+## Vorheriger implementierter Slice
+
+Der vorherige kleine Slice war `mam-contact-crossref` als CLI/CSV-Export ueber den vorhandenen `ContactCrossRefProjectionService`.
 
 Minimalfelder:
 

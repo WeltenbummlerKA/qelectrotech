@@ -199,6 +199,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
   This is test-only coverage over existing `ContactCrossRefProjectionService` diagnostics; no product, UI, persistence, XML schema, Device/Core, runtime, packaging, or repair behavior changed.
 - Added the next small `--export-mam-contact-crossref` warning coverage slice on 2026-09-26: the CLI test now exports missing, out-of-range, and type-mismatch `group_index` variants derived from the same fixture.
   This also remains test-only coverage over existing projection warnings; no product behavior or persisted project data changed.
+- Added the Terminal/Potential MAM CSV field decision on 2026-09-26 in `Spec_MAM_Report_ReadOnly.md`.
+  The selected next report is `--export-mam-terminal-potential` as a semicolon CSV over existing live conductor/potential graph evidence and conductor endpoint identities.
+  It deliberately excludes terminal-strip membership/bridges, cable/core ownership, UI, persistence, XML schema, Device/Core migration, runtime, packaging, and repair behavior.
 
 ## In Progress
 - None.

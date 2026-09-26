@@ -32,7 +32,8 @@ Next concrete slices:
 - `Spec_MAM_Report_ReadOnly.md` now fixes the first combined MAM report boundary: internal MAM CAE/project review and CSV-based regression evidence, read-only CLI/CSV first, separate PLC IO, Contact/CrossRef, Terminal/Potential, and later Summary CSV families.
 - The matching Contact/CrossRef projection CSV is now `--export-mam-contact-crossref`: it reports master/slave identity, `group_index`, resolved group metadata, slave contact metadata, status, and deterministic warnings from `ContactCrossRefProjectionService`.
 - Warning-case coverage for `--export-mam-contact-crossref` now reuses the existing master/slave fixture via temporary duplicate, missing, out-of-range, and type-mismatch `group_index` variants and verifies the exported `WARNING` rows without adding new production logic.
-- The next MAM report step should stay small: specify the later Terminal/Potential CSV fields rather than widening the existing PLC/contact exports. Do not merge PLC, contact, and terminal-strip semantics into one wide table.
+- Terminal/Potential MAM CSV fields are now specified in `Spec_MAM_Report_ReadOnly.md`. The next implementable slice is `--export-mam-terminal-potential`, a semicolon detail CSV per conductor over existing live potential traversal and conductor endpoint identity facts.
+- Keep the first Terminal/Potential report intentionally narrow: wire/conductor UUID, folio, endpoint labels/UUIDs/terminal names, potential group wire number, potential conductor count, potential terminal count, status, and warnings. Do not merge PLC, Contact/CrossRef, terminal-strip, cable/core, UI, persistence, XML schema, Device/Core migration, runtime, or package semantics into this table.
 
 Latest PLC projection stabilization:
 - `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.
