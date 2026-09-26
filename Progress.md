@@ -186,6 +186,9 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
   This remains test-only read-only coverage over the existing terminal-strip XML/data surface and does not change product code, UI, persistence format, XML schema, Device/Core ownership, runtime, or packaging behavior.
 - Added another small terminal-strip regression slice on 2026-09-26: `tst_terminalstrip_roundtrip` now verifies physical-terminal layout grouping, not only the flattened real-terminal membership list.
   The fixture still covers only existing project-level terminal-strip XML load/resave preservation and remains outside product code, UI, persistence format, XML schema, Device/Core ownership, runtime, and packaging.
+- Added the first MAM-specific read-only report/export slice on 2026-09-26: `--export-mam-plc-io` writes a semicolon CSV from `PlcIoProjectionService` with PLC master row facts, linked slave evidence, status, and warning text.
+  The export consumes the existing read-only PLC projection service and does not change UI, persistence, XML schema, Device/Core ownership, runtime, or packaging.
+  Focused CLI coverage is in `tst_mam_plc_io_export`, using a temporary PLC variant derived from the existing master/slave fixture.
 
 ## In Progress
 - None.

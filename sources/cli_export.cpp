@@ -25,6 +25,7 @@
 #include "diagram.h"
 #include "diagramcontext.h"
 #include "pdf_links.h"
+#include "plcioprojectionservice.h"
 #include "qetgraphicsitem/conductor.h"
 #include "qetgraphicsitem/element.h"
 #include "qetgraphicsitem/terminal.h"
@@ -75,6 +76,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-wiring", "wiring"},
 		{"--export-nets", "nets"},
 		{"--export-links", "links"},
+		{"--export-mam-plc-io", "mam-plc-io"},
 		{"--info", "info"},
 		{"--check-elements", "check"},
 		{"--resave", "resave"},
@@ -716,6 +718,74 @@ int exportLinks(QETProject &project, const QString &output)
 	return 0;
 }
 
+/// MAM-specific PLC IO report from the read-only PLC projection service.
+int exportMamPlcIo(QETProject &project, const QString &output)
+{
+	PlcIoProjectionService service;
+	const QList<PlcIoProjection> channels = service.channels(project);
+
+	static const QStringList columns {
+		"master_label", "master_uuid", "folio", "io_index", "type",
+		"direction", "address", "function", "comment", "terminal_count",
+		"terminal_labels", "linked_slave_label", "linked_slave_uuid",
+		"linked_slave_folio", "linked_slave_terminal_count", "status",
+		"warnings"
+	};
+
+	QString csv = columns.join(";") % "\n";
+	int warnings = 0;
+	for (const PlcIoProjection &channel : channels) {
+		const QString status = channel.warnings.isEmpty()
+			? QStringLiteral("OK")
+			: QStringLiteral("WARNING");
+		if (!channel.warnings.isEmpty())
+			++warnings;
+
+		const QStringList values {
+			channel.master_label,
+			channel.master_uuid.toString(QUuid::WithoutBraces),
+			QString::number(channel.folio),
+			QString::number(channel.io_index),
+			ElementData::translatedPlcIOType(channel.type),
+			channel.direction == PlcIoProjection::Input
+				? QStringLiteral("input")
+				: QStringLiteral("output"),
+			channel.address,
+			channel.function,
+			channel.comment,
+			QString::number(channel.terminal_count),
+			channel.terminal_labels.join(QLatin1Char(',')),
+			channel.linked_slave_label,
+			channel.linked_slave_uuid.isNull()
+				? QString()
+				: channel.linked_slave_uuid.toString(QUuid::WithoutBraces),
+			channel.linked_slave_folio < 0
+				? QString()
+				: QString::number(channel.linked_slave_folio),
+			QString::number(channel.linked_slave_terminal_count),
+			status,
+			channel.warnings.join(QStringLiteral(" | "))
+		};
+
+		QStringList escaped;
+		for (const QString &value : values)
+			escaped << csvField(value);
+		csv += escaped.join(QLatin1Char(';')) % "\n";
+	}
+
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << csv;
+	file.close();
+	out << "Exported " << channels.size() << " MAM PLC IO channel(s), "
+		<< warnings << " warning row(s) -> " << output << "\n";
+	return 0;
+}
+
 /// Round-trip: load the project and write its XML back out, so an external
 /// diff can reveal markup QET silently normalises (tolerated-but-invalid XML).
 int resaveProject(QETProject &project, const QString &output)
@@ -900,6 +970,8 @@ int run(const QStringList &args)
 		return exportNets(project, output);
 	if (format == "links")
 		return exportLinks(project, output);
+	if (format == "mam-plc-io")
+		return exportMamPlcIo(project, output);
 	if (format == "resave")
 		return resaveProject(project, output);
 	if (format == "settb")

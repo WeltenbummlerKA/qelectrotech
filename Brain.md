@@ -28,7 +28,8 @@ Next concrete slices:
 - The first terminal-strip regression slice is now covered by `tst_terminalstrip_roundtrip`: its fixture is explicitly synthetic/provisional, uses embedded terminal elements plus project-level `<terminal_strips>`, and only asserts read-only load/resave preservation of strip membership and bridge references.
 - The latest terminal-strip regression slice extends the same test to strip metadata: `installation`, `location`, `name`, `comment`, and `description` are now pinned across original fixture load plus first and second `--resave` output.
 - The current terminal-strip regression also pins physical-terminal grouping, so a later load/save regression cannot silently flatten the two physical terminals into a different layout while preserving only the same real-terminal UUID set.
-- Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
+- The first MAM-specific report/export slice is now `--export-mam-plc-io`: a CLI-only semicolon CSV backed by `PlcIoProjectionService`, exposing PLC master row facts, linked slave evidence, status, and deterministic projection warnings without UI, persistence, XML schema, Device/Core, runtime, or packaging changes.
+- A reasonable next report/export increment is either a matching Contact/CrossRef projection CSV or a small spec deciding the first combined MAM report fields; do not combine PLC, contact, and terminal-strip semantics until the report audience and required columns are explicit.
 
 Latest PLC projection stabilization:
 - `PlcIoProjectionService` now treats slave-side `plc_type`, `plc_address`, `plc_function`, `plc_comment`, `plc_tc`, and `plc_t1`..`plc_t4` as copied display/formula evidence only.
