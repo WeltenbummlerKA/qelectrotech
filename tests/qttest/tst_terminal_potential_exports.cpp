@@ -88,6 +88,15 @@ QMap<QString, int> expectedCableTerminalPairs()
 	};
 }
 
+QString endpointPairKey(QString first_element, QString first_terminal, QString second_element, QString second_terminal)
+{
+	QString first = first_element + QLatin1Char(':') + first_terminal;
+	QString second = second_element + QLatin1Char(':') + second_terminal;
+	if (second < first)
+		std::swap(first, second);
+	return first + QLatin1Char('|') + second;
+}
+
 QString terminalPairKey(QString first, QString second)
 {
 	if (second < first)
@@ -167,10 +176,14 @@ private slots:
 		QCOMPARE(CliTestUtils::columnSet(wiring_rows, QStringLiteral("wire_number")), expected_wires);
 
 		const int wire_index = wiring_rows.first().indexOf(QStringLiteral("wire_number"));
+		const int from_element_index = wiring_rows.first().indexOf(QStringLiteral("from_element_label"));
 		const int from_terminal_index = wiring_rows.first().indexOf(QStringLiteral("from_terminal"));
+		const int to_element_index = wiring_rows.first().indexOf(QStringLiteral("to_element_label"));
 		const int to_terminal_index = wiring_rows.first().indexOf(QStringLiteral("to_terminal"));
 		QVERIFY(wire_index >= 0);
+		QVERIFY(from_element_index >= 0);
 		QVERIFY(from_terminal_index >= 0);
+		QVERIFY(to_element_index >= 0);
 		QVERIFY(to_terminal_index >= 0);
 
 		const QMap<QString, QSet<QString>> expected_wiring = expectedWiringTerminals();
@@ -191,16 +204,36 @@ private slots:
 		QCOMPARE(cables_rows.size() - 1, expected_wires.size());
 		const int cable_from_terminal_index = cables_rows.first().indexOf(QStringLiteral("Borne 1"));
 		const int cable_to_terminal_index = cables_rows.first().indexOf(QStringLiteral("Borne 2"));
+		const int cable_from_element_index = cables_rows.first().indexOf(QStringLiteral("Composant 1"));
+		const int cable_to_element_index = cables_rows.first().indexOf(QStringLiteral("Composant 2"));
 		QVERIFY(cable_from_terminal_index >= 0);
 		QVERIFY(cable_to_terminal_index >= 0);
+		QVERIFY(cable_from_element_index >= 0);
+		QVERIFY(cable_to_element_index >= 0);
 
+		QMap<QString, int> expected_cable_endpoint_pairs;
+		QMap<QString, int> actual_cable_endpoint_pairs;
 		QMap<QString, int> actual_cable_terminal_pairs;
+		for (int i = 1; i < wiring_rows.size(); ++i) {
+			const QStringList row = wiring_rows.at(i);
+			++expected_cable_endpoint_pairs[endpointPairKey(
+				row.at(from_element_index),
+				row.at(from_terminal_index),
+				row.at(to_element_index),
+				row.at(to_terminal_index))];
+		}
 		for (int i = 1; i < cables_rows.size(); ++i) {
 			const QStringList row = cables_rows.at(i);
+			++actual_cable_endpoint_pairs[endpointPairKey(
+				row.at(cable_from_element_index),
+				row.at(cable_from_terminal_index),
+				row.at(cable_to_element_index),
+				row.at(cable_to_terminal_index))];
 			++actual_cable_terminal_pairs[terminalPairKey(
 				row.at(cable_from_terminal_index),
 				row.at(cable_to_terminal_index))];
 		}
+		QCOMPARE(actual_cable_endpoint_pairs, expected_cable_endpoint_pairs);
 		QCOMPARE(actual_cable_terminal_pairs, expectedCableTerminalPairs());
 
 		const QStringList wire_lines =
