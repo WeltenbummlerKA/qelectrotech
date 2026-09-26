@@ -172,6 +172,14 @@ private slots:
 
 		const QList<QStringList> wiring_rows =
 			CliTestUtils::parseSemicolonCsv(QString::fromUtf8(CliTestUtils::readFile(wiring_path)));
+		QCOMPARE(wiring_rows.first(),
+				 QStringList({QStringLiteral("wire_number"),
+							  QStringLiteral("from_element_label"),
+							  QStringLiteral("from_terminal"),
+							  QStringLiteral("to_element_label"),
+							  QStringLiteral("to_terminal"),
+							  QStringLiteral("diagram_position"),
+							  QStringLiteral("conductor_uuid")}));
 		QCOMPARE(wiring_rows.size() - 1, expected_wires.size());
 		QCOMPARE(CliTestUtils::columnSet(wiring_rows, QStringLiteral("wire_number")), expected_wires);
 
@@ -211,6 +219,16 @@ private slots:
 
 		const QList<QStringList> cables_rows =
 			CliTestUtils::parseSemicolonCsv(QString::fromUtf8(CliTestUtils::readFile(cables_path)));
+		QCOMPARE(cables_rows.first(),
+				 QStringList({QStringLiteral("Page"),
+							  QStringLiteral("Composant 1"),
+							  QStringLiteral("Borne 1"),
+							  QStringLiteral("Composant 2"),
+							  QStringLiteral("Borne 2"),
+							  QStringLiteral("Tension / Protocole"),
+							  QStringLiteral("Couleur du fil"),
+							  QStringLiteral("Section du fil"),
+							  QStringLiteral("Fonction")}));
 		QCOMPARE(cables_rows.size() - 1, expected_wires.size());
 		const int cable_from_terminal_index = cables_rows.first().indexOf(QStringLiteral("Borne 1"));
 		const int cable_to_terminal_index = cables_rows.first().indexOf(QStringLiteral("Borne 2"));

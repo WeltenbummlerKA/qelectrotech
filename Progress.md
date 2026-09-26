@@ -174,6 +174,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
   This is test-only coverage and keeps the cable exporter equivalence check within existing CLI/QtTest boundaries without production, UI, persistence, XML schema, Device/Core, runtime, or package changes.
 - Added the next small terminal/potential/export-equivalence coverage slice on 2026-09-26: `tst_terminal_potential_exports` now verifies that the database-backed `--export-wiring` rows expose one non-empty, unique `conductor_uuid` per expected conductor in the workflow fixture.
   This is test-only evidence for conductor identity coverage and does not change production export logic, UI, persistence, XML schema, Device/Core ownership, runtime, or package behavior.
+- Added another small terminal/potential/export-equivalence coverage slice on 2026-09-26: `tst_terminal_potential_exports` now pins the expected `--export-wiring` and `--export-cables` CSV headers used by the endpoint/identity comparisons.
+  This remains test-only export contract coverage and does not change production export logic, UI, persistence, XML schema, Device/Core ownership, runtime, or package behavior.
 
 ## In Progress
 - None.

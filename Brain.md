@@ -23,6 +23,7 @@ Next concrete slices:
 - Continue terminal/potential/export-equivalence coverage before deeper terminal-strip or cable semantics; the current workflow fixture now cross-checks cable export terminal endpoint pairs against the existing net/wiring/wire expectations.
 - The next terminal/potential/export-equivalence slice tightened that check to full endpoint identity: `--export-cables` rows are now compared as unordered `Composant:Borne` pairs against the database-backed `--export-wiring` rows for the same fixture.
 - The latest terminal/potential/export-equivalence slice adds conductor identity evidence: `--export-wiring` must expose one non-empty, unique `conductor_uuid` per expected conductor in the workflow fixture.
+- The following small export-contract slice pins the `--export-wiring` and `--export-cables` CSV headers consumed by those endpoint and identity comparisons.
 - Prepare the first MAM-specific report/export slice only after the projection facts it consumes are stable.
 
 Latest PLC projection stabilization:
