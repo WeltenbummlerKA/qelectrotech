@@ -67,6 +67,42 @@ class tst_mam_summary_export : public QObject
 	Q_OBJECT
 
 private slots:
+	void exportsSummaryRowsInStableOrder()
+	{
+		const QString fixture = QFINDTESTDATA("fixtures/workflow_exports_minimal.qet");
+		QVERIFY2(!fixture.isEmpty(), "workflow export fixture project not found");
+
+		QTemporaryDir dir;
+		QVERIFY(dir.isValid());
+		const QString export_path = dir.filePath(QStringLiteral("mam_summary_order.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-summary"),
+			fixture,
+			export_path
+		});
+		QCOMPARE(result.exit_code, 0);
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+		QCOMPARE(rows.size(), 8);
+
+		QStringList ordered_wire_numbers;
+		const QStringList header = rows.first();
+		for (int row = 1; row < rows.size(); ++row) {
+			const QStringList fields = rows.at(row);
+			QCOMPARE(fields.value(header.indexOf(QStringLiteral("record_type"))),
+				QStringLiteral("terminal_potential"));
+			QCOMPARE(fields.value(header.indexOf(QStringLiteral("source_export"))),
+				QStringLiteral("mam-terminal-potential"));
+			ordered_wire_numbers << fields.value(header.indexOf(QStringLiteral("label")));
+		}
+		QCOMPARE(ordered_wire_numbers, QStringList({
+			QStringLiteral("W005"), QStringLiteral("W006"), QStringLiteral("W007"),
+			QStringLiteral("W008"), QStringLiteral("W009"), QStringLiteral("W010"),
+			QStringLiteral("W011")
+		}));
+	}
+
 	void exportsContactRowsAsFirstMamWorkingList()
 	{
 		const QString fixture = QFINDTESTDATA("fixtures/master_slave_links_group_index_minimal.qet");

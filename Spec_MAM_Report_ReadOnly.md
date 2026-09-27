@@ -40,6 +40,25 @@ Ein zukuenftiger kombinierter Export darf mehrere CSV-Dateien schreiben oder ein
 
 Der erste Summary-Slice ist `--export-mam-summary <project.qet> <output.csv>`.
 
+### Aufrufbeispiel
+
+Die Summary laesst sich aus dem Projektordner direkt in eine CSV-Datei exportieren:
+
+```sh
+qelectrotech --export-mam-summary Projekt.qet MAM-Arbeitsliste.csv
+```
+
+Die erste Zeile enthaelt die gemeinsamen Spalten. Danach folgen getrennte Faktenzeilen; `record_type` und `source_export` zeigen, aus welchem Reportbereich die jeweilige Zeile stammt:
+
+```csv
+record_type;folio;item_uuid;label;role;category;address_or_terminal;linked_item;status;warnings;source_export
+plc_io;0;...;PLC1;input;Entrée digitale;%I0.0;S1;OK;;mam-plc-io
+contact_crossref;0;...;S1;NO;NO;group_index 0;K1;OK;;mam-contact-crossref
+terminal_potential;0;...;W005;conductor;W005;1 -> 2;S1 -> K1;OK;;mam-terminal-potential
+```
+
+Die Beispielzeilen veranschaulichen nur das Format. Die konkreten Zeilen und Werte richten sich nach den im Projekt vorhandenen, auswertbaren Fakten.
+
 Minimalfelder:
 
 - `record_type`

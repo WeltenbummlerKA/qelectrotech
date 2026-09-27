@@ -212,6 +212,8 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Added the first combined MAM overview list on 2026-09-26: `--export-mam-summary` writes one semicolon CSV working list with separate `plc_io`, `contact_crossref`, and `terminal_potential` rows.
   It reuses the existing read-only projections/export logic and does not join unrelated domains, change UI, persistence, XML schema, Device/Core ownership, runtime, packaging, or repair behavior.
   Focused CLI coverage is in `tst_mam_summary_export`, checking the shared header plus expected contact and terminal/potential warning rows.
+- Added the first user-facing MAM Summary example on 2026-09-27 to `Spec_MAM_Report_ReadOnly.md`, including the CLI command, CSV header, and representative separated row types.
+  Extended `tst_mam_summary_export` to pin deterministic terminal/potential row ordering (`W005` through `W011`) from the workflow fixture. This remains read-only documentation/test coverage with no product behavior changes.
 
 ## In Progress
 - None.
