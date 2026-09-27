@@ -62,6 +62,7 @@ class BorderTitleBlock : public QObject
 		/// @return the column headers height, in pixels
 		qreal columnsHeaderHeight() const {
 			return(columns_header_height_); }
+		qreal headingHeight() const { return(heading_height_); }
 	
 		//ROWS
 		/// @return the number of rows
@@ -92,7 +93,7 @@ class BorderTitleBlock : public QObject
 		*/
 		qreal diagramHeight() const
 {
-			return(rowsTotalHeight() + columnsHeaderHeight()); }
+			return(rowsTotalHeight() + columnsHeaderHeight() + headingHeight()); }
 
 		QRectF titleBlockRect () const;
 
@@ -155,6 +156,7 @@ class BorderTitleBlock : public QObject
 		void setColumnsWidth(const qreal &);
 		void setRowsHeight(const qreal &);
 		void setColumnsHeaderHeight(const qreal &);
+		void setHeadingHeight(const qreal &);
 		void setRowsHeaderWidth(const qreal &);
 		void setDiagramHeight(const qreal &);
 		
@@ -267,6 +269,7 @@ class BorderTitleBlock : public QObject
 		int columns_count_;           ///< columns count
 		qreal columns_width_;         ///< columns width
 		qreal columns_header_height_; ///< columns header height
+		qreal heading_height_;        ///< page heading height between column labels and drawing area
 	
 		// rows: number and dimensions
 		int rows_count_;          ///< rows count

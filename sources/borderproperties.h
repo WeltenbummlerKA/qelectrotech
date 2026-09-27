@@ -46,6 +46,7 @@ class BorderProperties {
 		int columns_count;            ///< Columns count
 		qreal columns_width;          ///< Columns width
 		qreal columns_header_height;  ///< Column headers height
+		qreal heading_height;         ///< Height of the page heading below the column labels
 		bool display_columns;         ///< Whether to display column headers
 	
 		int rows_count;               ///< Rows count

@@ -53,6 +53,9 @@ void BorderPropertiesWidget::setProperties(const BorderProperties &bp)
 	m_properties = bp;
 	ui -> m_colums_count_sp    ->setValue   (m_properties.columns_count);
 	ui -> m_columns_width_sp   ->setValue   (m_properties.columns_width);
+	ui -> m_column_header_height_sp ->setValue(m_properties.columns_header_height);
+	ui -> m_heading_height_sp ->setValue(m_properties.heading_height);
+	ui -> m_row_header_width_sp ->setValue(m_properties.rows_header_width);
 	ui -> m_display_columns_cb ->setChecked (m_properties.display_columns);
 	ui -> m_rows_count_sp      ->setValue   (m_properties.rows_count);
 	ui -> m_rows_height_sp     ->setValue   (m_properties.rows_height);
@@ -67,6 +70,9 @@ const BorderProperties &BorderPropertiesWidget::properties ()
 {
 	m_properties.columns_count   = ui -> m_colums_count_sp    -> value();
 	m_properties.columns_width   = ui -> m_columns_width_sp   -> value();
+	m_properties.columns_header_height = ui -> m_column_header_height_sp -> value();
+	m_properties.heading_height = ui -> m_heading_height_sp -> value();
+	m_properties.rows_header_width = ui -> m_row_header_width_sp -> value();
 	m_properties.display_columns = ui -> m_display_columns_cb -> isChecked();
 	m_properties.rows_count      = ui -> m_rows_count_sp      -> value();
 	m_properties.rows_height     = ui -> m_rows_height_sp     -> value();

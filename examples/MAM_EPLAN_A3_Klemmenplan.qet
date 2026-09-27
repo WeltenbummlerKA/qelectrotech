@@ -1,0 +1,205 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project title="MAM EPLAN A3 Klemmenplan" version="0.80">
+    <properties />
+    <titleblocktemplates>
+        <titleblocktemplate name="MAM_EPLAN_Klemmenplan_A3">
+            <information>QET-Vorlage nach dem öffentlich gezeigten EPLAN-Klemmenplan-Muster. A3 quer dient als Maßbezug. Die Feldproportionen des Schriftfelds sind aus dem 1024 x 724 px großen Vorschaubild abgeleitet; dies ist kein offizieller EPLAN-Plotrahmen. Alle variablen Inhalte werden im QET-Schriftfeld-Dialog gepflegt.</information>
+            <logos />
+            <grid cols="t14%;t5%;t5%;t6%;t14%;t11%;t16%;t5%;t5%;t9%;t10%" rows="6;6;6;">
+                <field row="0" col="0" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="cabinet_caption">
+                    <value>
+                        <translation lang="de">Anlage / Schrank</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="1" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="revision_caption">
+                    <value>
+                        <translation lang="de">Änd.</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="2" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="date_caption">
+                    <value>
+                        <translation lang="de">Datum</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="3" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="author_caption">
+                    <value>
+                        <translation lang="de">Name</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="4" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="project_caption">
+                    <value>
+                        <translation lang="de">Projekt</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="5" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="document_caption">
+                    <value>
+                        <translation lang="de">Dokument</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="6" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="function_caption">
+                    <value>
+                        <translation lang="de">Funktion / Bezeichnung</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="7" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="folio_caption">
+                    <value>
+                        <translation lang="de">Blatt</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="8" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="column_caption">
+                    <value>
+                        <translation lang="de">Spalte</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="9" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="sheets_caption">
+                    <value>
+                        <translation lang="de">Blätter</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="0" col="10" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="format_caption">
+                    <value>
+                        <translation lang="de">Format</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="0" align="center" valign="center" hadjust="true" fontsize="7" displaylabel="false" name="location">
+                    <value>
+                        <translation lang="de">%locmach</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="1" align="center" valign="center" hadjust="true" fontsize="6" displaylabel="false" name="revision">
+                    <value>
+                        <translation lang="de">%indexrev</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="2" align="center" valign="center" hadjust="true" fontsize="6" displaylabel="false" name="date">
+                    <value>
+                        <translation lang="de">%date</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="3" align="center" valign="center" hadjust="true" fontsize="6" displaylabel="false" name="author">
+                    <value>
+                        <translation lang="de">%author</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="4" align="center" valign="center" hadjust="true" fontsize="7" displaylabel="false" name="project">
+                    <value>
+                        <translation lang="de">%projecttitle</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="5" align="center" valign="center" hadjust="true" fontsize="7" displaylabel="false" name="document">
+                    <value>
+                        <translation lang="de">%title</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="6" align="center" valign="center" hadjust="true" fontsize="7" displaylabel="false" name="function">
+                    <value>
+                        <translation lang="de">%{drawing-function}</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="7" align="center" valign="center" hadjust="true" fontsize="7" displaylabel="false" name="folio">
+                    <value>
+                        <translation lang="de">%folio</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="8" align="center" valign="center" hadjust="true" fontsize="6" displaylabel="false" name="column">
+                    <value>
+                        <translation lang="de">%{column-reference}</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="9" align="center" valign="center" hadjust="true" fontsize="6" displaylabel="false" name="total_sheets">
+                    <value>
+                        <translation lang="de">%folio-total</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="1" col="10" align="center" valign="center" hadjust="true" fontsize="6" displaylabel="false" name="sheet_format">
+                    <value>
+                        <translation lang="de">%{sheet-format}</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="0" colspan="4" align="left" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="revision_note">
+                    <value>
+                        <translation lang="de">%{revision-note}</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="4" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="plant">
+                    <value>
+                        <translation lang="de">%plant</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="5" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="document_id">
+                    <value>
+                        <translation lang="de">%filename</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="6" align="left" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="drawing_note">
+                    <value>
+                        <translation lang="de">%{drawing-note}</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="7" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="folio_id">
+                    <value>
+                        <translation lang="de">%folio-id</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="8" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="sheet_version">
+                    <value>
+                        <translation lang="de">%{form-id}</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="9" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="scale">
+                    <value>
+                        <translation lang="de">%{scale}</translation>
+                    </value>
+                    <label />
+                </field>
+                <field row="2" col="10" align="center" valign="center" hadjust="true" fontsize="5" displaylabel="false" name="format_detail">
+                    <value>
+                        <translation lang="de">%{sheet-format}</translation>
+                    </value>
+                    <label />
+                </field>
+            </grid>
+        </titleblocktemplate>
+    </titleblocktemplates>
+    <newdiagrams>
+        <border cols="10" colsize="40.5" colheaderheight="6" headingheight="19" rows="8" rowsize="30.5" rowheaderwidth="5" displaycols="true" displayrows="false" />
+        <inset titleblocktemplate="MAM_EPLAN_Klemmenplan_A3" titleblocktemplateCollection="embedded" displayAt="bottom" title="Klemmenplan" folio="%id/%total" author="" date="null" filename="" version="" plant="" locmach="" indexrev="" auto_page_num="" />
+        <conductors type="simple" />
+    </newdiagrams>
+    <diagram cols="10" colsize="40.5" colheaderheight="6" headingheight="19" rows="8" rowsize="30.5" rowheaderwidth="5" displaycols="true" displayrows="false" title="Klemmenplan" order="1" titleblocktemplate="MAM_EPLAN_Klemmenplan_A3" titleblocktemplateCollection="embedded" displayAt="bottom" folio="%id/%total" date="null" author="" filename="" version="" plant="" locmach="" indexrev="" auto_page_num="" height="269" freezeNewElement="false" freezeNewConductor="false">
+        <properties />
+        <defaultconductor type="simple" />
+        <autonum />
+        <elements />
+        <images />
+        <inputs />
+    </diagram>
+</project>

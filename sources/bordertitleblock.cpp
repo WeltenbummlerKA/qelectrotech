@@ -31,6 +31,7 @@
 #include <QLocale>
 #include <QPainter>
 #include <QRegularExpression>
+#include <QFontMetricsF>
 #include <utility>
 
 #define MIN_COLUMN_COUNT 3
@@ -51,7 +52,19 @@
 	\~French QObject parent de ce BorderTitleBlock
 */
 BorderTitleBlock::BorderTitleBlock(QObject *parent) :
-	QObject(parent)
+	QObject(parent),
+	columns_count_(17),
+	columns_width_(60.0),
+	columns_header_height_(20.0),
+	heading_height_(0.0),
+	rows_count_(8),
+	rows_height_(80.0),
+	rows_header_width_(20.0),
+	display_columns_(true),
+	display_rows_(true),
+	display_titleblock_(true),
+	display_border_(true),
+	m_edge(Qt::BottomEdge)
 {
 	// at first, the internal titleblock template renderer uses the default titleblock template
 	m_titleblock_template_renderer = new TitleBlockTemplateRenderer(this);
@@ -165,7 +178,7 @@ QRectF BorderTitleBlock::rowsRect() const
 	return QRectF (Diagram::margin,
 		       Diagram::margin,
 		       rows_header_width_,
-		       (rows_count_*rows_height_) + columns_header_height_);
+		       (rows_count_*rows_height_) + columns_header_height_ + heading_height_);
 }
 
 /**
@@ -178,7 +191,7 @@ QRectF BorderTitleBlock::outsideBorderRect() const
 	return QRectF (Diagram::margin,
 		       Diagram::margin,
 		       (columns_width_*columns_count_) + rows_header_width_,
-		       (rows_height_*rows_count_) + columns_header_height_);
+		       (rows_height_*rows_count_) + columns_header_height_ + heading_height_);
 }
 
 /**
@@ -195,7 +208,8 @@ QRectF BorderTitleBlock::insideBorderRect() const
 	qreal height = rows_height_*rows_count_;
 
 	display_rows_ ? left += rows_header_width_ : width += rows_header_width_;
-	display_columns_ ? top += columns_header_height_ : height += columns_header_height_;
+	top += columns_header_height_ + heading_height_;
+	if (!display_columns_) height += columns_header_height_;
 
 	return QRectF (left, top, width, height);
 }
@@ -228,10 +242,13 @@ void BorderTitleBlock::titleBlockFromXml(const QDomElement &xml_elmt) {
 void BorderTitleBlock::borderToXml(QDomElement &xml_elmt) {
 	xml_elmt.setAttribute("cols",        columnsCount());
 	xml_elmt.setAttribute("colsize",     QString("%1").arg(columnsWidth()));
+	xml_elmt.setAttribute("colheaderheight", QString::number(columnsHeaderHeight()));
+	xml_elmt.setAttribute("headingheight", QString::number(headingHeight()));
 	xml_elmt.setAttribute("displaycols", columnsAreDisplayed() ? "true" : "false");
 
 	xml_elmt.setAttribute("rows",        rowsCount());
 	xml_elmt.setAttribute("rowsize",     QString("%1").arg(rowsHeight()));
+	xml_elmt.setAttribute("rowheaderwidth", QString::number(rowsHeaderWidth()));
 	xml_elmt.setAttribute("displayrows", rowsAreDisplayed() ? "true" : "false");
 
 	// attribut datant de la version 0.1 - laisse pour retrocompatibilite
@@ -252,6 +269,18 @@ void BorderTitleBlock::borderFromXml(const QDomElement &xml_elmt) {
 	// columns width
 	double cols_width = xml_elmt.attribute("colsize").toDouble(&ok);
 	if (ok) setColumnsWidth(cols_width);
+	if (xml_elmt.hasAttribute("colheaderheight")) {
+		double value = xml_elmt.attribute("colheaderheight").toDouble(&ok);
+		if (ok) setColumnsHeaderHeight(value);
+	}
+	if (xml_elmt.hasAttribute("headingheight")) {
+		double value = xml_elmt.attribute("headingheight").toDouble(&ok);
+		if (ok) setHeadingHeight(value);
+	}
+	if (xml_elmt.hasAttribute("rowheaderwidth")) {
+		double value = xml_elmt.attribute("rowheaderwidth").toDouble(&ok);
+		if (ok) setRowsHeaderWidth(value);
+	}
 
 	// backward compatibility:
 	//	diagrams saved with 0.1 version have a "height" attribute
@@ -346,6 +375,7 @@ BorderProperties BorderTitleBlock::exportBorder()
 	bp.columns_count = columnsCount();
 	bp.columns_width = columnsWidth();
 	bp.columns_header_height = columnsHeaderHeight();
+	bp.heading_height = headingHeight();
 	bp.display_columns = columnsAreDisplayed();
 	bp.rows_count = rowsCount();
 	bp.rows_height = rowsHeight();
@@ -361,6 +391,7 @@ BorderProperties BorderTitleBlock::exportBorder()
 */
 void BorderTitleBlock::importBorder(const BorderProperties &bp) {
 	setColumnsHeaderHeight(bp.columns_header_height);
+	setHeadingHeight(bp.heading_height);
 	setColumnsCount(bp.columns_count);
 	setColumnsWidth(bp.columns_width);
 	displayColumns(bp.display_columns);
@@ -554,6 +585,21 @@ void BorderTitleBlock::draw(QPainter *painter)
 		}
 	}
 
+	// Draw the project heading band below the column labels.
+	if (display_border_ && heading_height_ > 0.0) {
+		QRectF heading_rect(diagram_rect_.left(),
+				    diagram_rect_.top() + columns_header_height_,
+				    diagram_rect_.width(), heading_height_);
+		painter->drawRect(heading_rect);
+		const DiagramContext context = m_titleblock_template_renderer->context();
+		const QString heading = context.value("title").toString();
+		const QString form_id = context.value("form-id").toString();
+		const qreal padding = qMin(qreal(3.0), heading_height_ / 4.0);
+		QRectF text_rect = heading_rect.adjusted(padding, 0, -padding, 0);
+		painter->drawText(text_rect, Qt::AlignVCenter | Qt::AlignLeft, heading);
+		painter->drawText(text_rect, Qt::AlignVCenter | Qt::AlignRight, form_id);
+	}
+
 		//Draw the nums of rows
 	if (display_border_ && display_rows_) {
 		for (int i = 1 ; i <= rows_count_ ; ++ i) {
@@ -561,7 +607,7 @@ void BorderTitleBlock::draw(QPainter *painter)
 				diagram_rect_.topLeft().x(),
 				diagram_rect_.topLeft().y()
 					+ (
-						columns_header_height_
+						columns_header_height_ + heading_height_
 						+ ((i - 1)* rows_height_)
 						),
 				rows_header_width_,
@@ -612,9 +658,20 @@ void BorderTitleBlock::drawDxf(
 {
 	// Transform to DXF scale.
 	columns_header_height_ *= Createdxf::yScale;
+	heading_height_         *= Createdxf::yScale;
 	rows_height_           *= Createdxf::yScale;
 	rows_header_width_     *= Createdxf::xScale;
 	columns_width_         *= Createdxf::xScale;
+
+	if (display_border_ && heading_height_ > 0.0) {
+		const double x = diagram_rect_.left() * Createdxf::xScale;
+		const double y = Createdxf::sheetHeight
+			- diagram_rect_.top() * Createdxf::yScale
+			- columns_header_height_ - heading_height_;
+		Createdxf::drawRectangle(file_path, x, y,
+					 double(diagram_rect_.width()) * Createdxf::xScale,
+					 heading_height_, color);
+	}
 
 	// draw the empty box that appears as soon as there is a header
 	// dessine la case vide qui apparait des qu'il y a un entete
@@ -676,11 +733,12 @@ void BorderTitleBlock::drawDxf(
 		for (int i = 1 ; i <= rows_count_ ; ++ i) {
 			double xCoord = diagram_rect_.topLeft().x()
 					* Createdxf::xScale;
-	    double yCoord = Createdxf::sheetHeight
+			double yCoord = Createdxf::sheetHeight
 		    - diagram_rect_.topLeft().y()
 					*Createdxf::yScale
 					- (
 						columns_header_height_
+						+ heading_height_
 						+ ((i - 1)
 						   * rows_height_) )
 					- rows_height_;
@@ -717,6 +775,7 @@ void BorderTitleBlock::drawDxf(
 
 	// Transform back to QET scale
 	columns_header_height_ /= Createdxf::yScale;
+	heading_height_         /= Createdxf::yScale;
 	rows_height_		   /= Createdxf::yScale;
 	rows_header_width_     /= Createdxf::xScale;
 	columns_width_         /= Createdxf::xScale;
@@ -773,6 +832,13 @@ void BorderTitleBlock::setColumnsWidth(const qreal &new_cw) {
 */
 void BorderTitleBlock::setColumnsHeaderHeight(const qreal &new_chh) {
 	columns_header_height_ = qBound(qreal(5.0), new_chh, qreal(50.0));
+	updateRectangles();
+}
+
+void BorderTitleBlock::setHeadingHeight(const qreal &new_height) {
+	const qreal bounded = qBound(qreal(0.0), new_height, qreal(100.0));
+	if (heading_height_ == bounded) return;
+	heading_height_ = bounded;
 	updateRectangles();
 }
 
@@ -841,7 +907,8 @@ void BorderTitleBlock::setRowsHeaderWidth(const qreal &new_rhw) {
 void BorderTitleBlock::setDiagramHeight(const qreal &height) {
 	//          size of rows to use = rows_height
 	// taille des lignes a utiliser = rows_height
-	setRowsCount(qRound(ceil(height / rows_height_)));
+	const qreal row_area_height = qMax(qreal(0.0), height - columns_header_height_ - heading_height_);
+	setRowsCount(qRound(ceil(row_area_height / rows_height_)));
 }
 
 /**
@@ -920,6 +987,7 @@ void BorderTitleBlock::updateDiagramContextForTitleBlock(
 	context.addValue("locmach",     btb_locmach_);
 	context.addValue("indexrev",    btb_indexrev_);
 	context.addValue("version",     btb_version_);
+	context.addValue("form-id", additional_fields_.value("form-id"));
 	context.addValue("folio",       btb_final_folio_);
 	context.addValue("folio-id",    folio_index_);
 	context.addValue("folio-total", folio_total_);

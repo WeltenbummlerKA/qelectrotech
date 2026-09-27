@@ -85,6 +85,52 @@ Next recommended task:
 ## Current Phase
 Private MAM CAE feature work on the existing fork.
 
+## 2026-09-27 - Schematic Template Priority
+
+User priority: schematic page templates must be a first-class CAE workstream and should follow established EPLAN presentation principles. This is a visible product gap, not merely a title-block styling task.
+
+Current evidence:
+- QElectroTech already has reusable title-block templates in `titleblocks/` and per-page properties for title block, border, row/column grid, and page numbering. Existing templates include generic QET/DIN/ISO samples; this is infrastructure, not yet a MAM CAE template system.
+- EPLAN's current public help describes page templates through page type, plot frame, form, grid, orientation/paper format, page description, and structured page identifiers. The frame can define the usable drawing area and coordinate grid; page properties can override project defaults.
+- EPLAN's public help also describes project/page structure identifiers and page types. These are reference principles for our design, not a request to copy proprietary forms or internal formats.
+
+CAE status at this point:
+- Present: QET primitives for title blocks, border/grid, page properties and project/page metadata.
+- Partial: coil contact mirror has a code-level fixed below-coil placement slice; interactive rendering/import remains unverified. Device library has initial Eaton relay/contactor profiles and generic contact symbols.
+- Missing: agreed MAM page-template set and usable default schematic layout; protection-device side contact mirrors; complete visible, verified contact-reference workflow; a unified user-facing CAE workflow.
+
+Next planned CAE slice:
+1. Define a readable MAM schematic page template based on EPLAN conventions: paper/orientation, drawing frame, coordinate zones, clear drawing field, title block, and page/project fields.
+2. Make it selectable as the project default and verify a new project/page opens with it.
+3. Only then align visible contact mirrors and cross-references to the template's drawing field and coordinate references.
+
+Do not treat the template as a decorative title block alone. Template layout and page/reference behavior need to be agreed and verified together. Do not begin a broad UI redesign in this slice.
+
+Clarification after EPLAN numbering check:
+- EPLAN's plot-frame grid labels normally start at 0; its documented start value can change that. This is separate from page numbers and path numbering. Path numbering has its own project setting and can be page-by-page, project-wide, or by structure identifier.
+- QET's standard diagram border currently stores the number of columns/rows and their sizes, but the inspected template files and `BorderTitleBlock` model do not expose EPLAN-like start values or independently configurable row/column label formats. The earlier user observation about numbering starting at 0 or 1 should therefore be made explicit in the MAM template requirements.
+- Do not conflate sheet/page numbering with coordinate-grid or electrical path references when designing the template.
+
+Page size and symbol-grid finding:
+- QET's diagram editor default placement/snap grid is 10 x 10 scene units (`Diagram::xGrid` / `yGrid`); fine keyboard movement is 1 unit. The grid is currently application/editor settings, not visibly tied to A3/A4 template size.
+- QET library symbols declare geometry and terminal coordinates independently in `.elmt` files. A symbol's connection points therefore must be checked against the chosen placement grid; changing paper size alone cannot make incompatible connection points snap correctly.
+- EPLAN documents 4 mm as the standard grid for electrical schematics. This does not establish that the MAM drawing sheet must always be A3. A3 is a plausible working sheet because it offers more usable space, but choose the sheet size only after validating that the standard symbols and their terminals align on a declared CAE grid.
+- The MAM template decision must explicitly set paper size, usable drawing area, placement/snap grid, and library symbol connection-point compatibility as one coordinated standard; visually verify representative symbols and wiring on the printed/exported sheet.
+
+### 2026-09-27 update - MAM A3 frame prototype
+
+Completed since the planning note above:
+- Added an editable QET border model for the extra heading band, column-header height, and row-header width; these values persist in project XML and application settings.
+- Added the MAM EPLAN-style A3 landscape sample frame: 10 columns labeled 0-9, 8 drawing rows, heading band below the column labels, and an 11-column/3-row variable title block. The sample frame with 5 mm page margins measures 420 x 297 mm overall.
+- Added `examples/MAM_EPLAN_A3_Klemmenplan.qet` as a blank project with the frame/template embedded, and `titleblocks/MAM_EPLAN_Klemmenplan_A3.titleblock` as the reusable title-block source. Custom title-block values, including `form-id`, are editable variables.
+- Verified the application target builds, the project and template XML parse, and QET's headless PNG export succeeds. Visually inspected the export. It shows the frame, 0-9 columns, title band, and title block.
+
+Still open:
+- The sample project embeds the frame, but a MAM default for newly created projects has not been wired up.
+- The title-block dimensions are a first reconstruction from the public reference image, not a measured or certified EPLAN frame. Check the print margins and text size against the user's reference before treating it as production-ready.
+- GUI import/editing was not tested in this run; the visual check used QET's headless export.
+- The new title band has text values, but DXF export currently draws its rectangle without the title/form-ID text.
+
 ## Current Objective
 Build a usable CAE library for relay and contactor devices, beginning with complete coil contact inventories and linked NO/NC/changeover symbols so the previously implemented contact mirror shows every declared contact below the coil.
 
@@ -379,7 +425,7 @@ Build a usable CAE library for relay and contactor devices, beginning with compl
 - Build warnings observed in unchanged upstream source: self-assignment warning in `elementsmover.cpp`, ignored `nodiscard` result in `qet.cpp`, and an existing TODO pragma message in `openelmtcommand.cpp`.
 
 ## Next Planned Step
-Add device/accessory composition to QElectroTech so attaching an auxiliary contact block to an already placed contactor adds its contacts and terminal labels to the coil contact mirror. Then visually verify the behavior in QET; the current library's combined Eaton profiles are a documented interim representation, not dynamic attachment.
+Complete the user's first visible CAE goal: a working coil contact mirror below each contactor/relay coil, with Master/Slave links and every declared NO/NC/changeover contact shown at a fixed spacing. Validate it in an actual QET GUI session against the separate Eaton combination Betriebsmittel already listed in the library. After that, implement side-mounted mirrors for motor-protection switches and fuses, then first-class early/late contact-function semantics. Separately wire the A3 sample frame into the MAM new-project default after GUI editing/printing has been checked.
 
 ## Change Log
 - 2026-09-21: Created baseline progress record and documented repository/remotes.
@@ -430,4 +476,7 @@ Add device/accessory composition to QElectroTech so attaching an auxiliary conta
 - 2026-09-26: Recorded user-controlled manual `open -n build/baseline/qelectrotech.app` launch as successful; GUI startup is partially verified, the earlier Codex/ChatGPT crash remains a launch-context/dev-bundle finding, and clean install/deploy/codesign/packaging remain open.
 - 2026-09-26: Re-audited Contact/CrossRef and PLC IO projection diagnostics; no service/test correction was needed, and the current scope remains read-only projection/validation with no UI, persistence, XML schema, Core, runtime, or packaging change.
 - 2026-09-27: Added `mam_cae_library/`, an importable QET custom collection with 5 master coil patterns and 5 slave contact symbols. Hilfsschütz 40E/31E/22E contact layouts follow Eaton Schaltungsbuch 10/23, pp. 4-2–4-3; generic relay and power-contactor patterns are explicitly labeled as templates, not product articles. XML and contact-group counts validated; GUI import/rendering remains unverified because the dev executable could not acquire its SingleApplication shared-memory lock.
-- 2026-09-27: Corrected the library gap for add-on contact blocks using Eaton Schaltungsbuch p. 4-3: added complete DILA-40E+XHI04, DILA-31+XHI13, and DILA-22+XHI22 profiles (each 4 NO + 4 NC, with the shown terminal labels). These are selectable combined coil definitions; adding a block to an already placed coil still does not dynamically update the mirror. That requires a separate device/accessory composition feature in QET.
+- 2026-09-27: Added separate coil/master definitions for all 24 standard contactor-relay combinations of DILA-40/31/22 with Eaton XHI02/11/20/04/13/22/31/40 blocks, using the resulting contact counts and combination codes from Eaton's catalog. Each completed combination is a separate Betriebsmittel; every auxiliary contact has its own contact group.
+- 2026-09-27: Reshaped coil contact inventory so every auxiliary NO/NC contact is its own linkable group; changeover contacts are single 3-terminal groups, and the three main power poles are separate 1-pole groups. This follows the user's preference for separate components and keeps individual master/slave assignments available.
+- 2026-09-27: Added manufacturer-neutral IEC master/slave symbols for early-make NO, late-make NO, late-break NC, and early-break NC contacts. Added six Eaton DILA-XHIV11/XHIV22 base-plus-block profiles with catalog codes and terminal labels. In current QET linking/rendering these special contacts are categorized in the ordinary NO/NC columns; first-class early/late semantics remain the next software slice. Siemens SIRIUS and Schneider TeSys references document the same general contact-function families.
+- 2026-09-27: Reviewed Eaton Schaltungsbuch 10/23 printed pp. 4-43–4-44 visually. Page 4-44 shows PKZM/PKZ/PKE motor-protection devices with NHI11/AGM2 contacts to the right, using the same BMK `-Q1` as the base device. No fuse-with-auxiliary-contact schematic was located in the extracted book text; fuse contact/mapping remains user-directed scope, with exact labels/BMK to be checked against a direct example.
