@@ -83,10 +83,10 @@ Next recommended task:
 - If explicitly approved, implement a narrow read-only projection prototype with direct QtTest coverage. Do not change XML persistence, CrossRef rendering, CLI/export behavior, or Device/Function ownership in that slice.
 
 ## Current Phase
-Private/MAM-internal fork direction after upstream PR closure.
+Private MAM CAE feature work on the existing fork.
 
 ## Current Objective
-Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the private branch strategy before further MAM-only slices.
+Build a usable CAE library for relay and contactor devices, beginning with complete coil contact inventories and linked NO/NC/changeover symbols so the previously implemented contact mirror shows every declared contact below the coil.
 
 ## Completed
 - Local repository inspected non-destructively on 2026-09-21.
@@ -379,7 +379,7 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
 - Build warnings observed in unchanged upstream source: self-assignment warning in `elementsmover.cpp`, ignored `nodiscard` result in `qet.cpp`, and an existing TODO pragma message in `openelmtcommand.cpp`.
 
 ## Next Planned Step
-If runtime confidence beyond the successful user-controlled dev-bundle launch is needed, follow with a separate packaging/deploy/signing slice before any `/Applications` installation claim. Do not mix this with PLC/CAE feature work.
+Import the MAM collection into QElectroTech and visually verify the relay/contactor contact mirrors and master/slave linking on a schematic. Then extend the library with article-specific devices only where authoritative manufacturer documentation gives the exact contact inventory and terminal labels.
 
 ## Change Log
 - 2026-09-21: Created baseline progress record and documented repository/remotes.
@@ -429,3 +429,4 @@ If runtime confidence beyond the successful user-controlled dev-bundle launch is
 - 2026-09-26: Completed read-only Runtime-QA bundle inspection for `build/baseline/qelectrotech.app`; found a dev bundle with executable and Info.plist only, external Homebrew Qt dependencies, ad-hoc linker signature, and failing strict codesign verification; no GUI launch, install, code change, test implementation, commit, reset, push, or `/Applications` mutation was performed.
 - 2026-09-26: Recorded user-controlled manual `open -n build/baseline/qelectrotech.app` launch as successful; GUI startup is partially verified, the earlier Codex/ChatGPT crash remains a launch-context/dev-bundle finding, and clean install/deploy/codesign/packaging remain open.
 - 2026-09-26: Re-audited Contact/CrossRef and PLC IO projection diagnostics; no service/test correction was needed, and the current scope remains read-only projection/validation with no UI, persistence, XML schema, Core, runtime, or packaging change.
+- 2026-09-27: Added `mam_cae_library/`, an importable QET custom collection with 5 master coil patterns and 5 slave contact symbols. Hilfsschütz 40E/31E/22E contact layouts follow Eaton Schaltungsbuch 10/23, pp. 4-2–4-3; generic relay and power-contactor patterns are explicitly labeled as templates, not product articles. XML and contact-group counts validated; GUI import/rendering remains unverified because the dev executable could not acquire its SingleApplication shared-memory lock.

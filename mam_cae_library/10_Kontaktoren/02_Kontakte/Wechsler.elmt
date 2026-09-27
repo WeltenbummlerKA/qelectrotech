@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<definition version="0.100.0" type="element" link_type="slave" width="40" height="60" hotspot_x="30" hotspot_y="30">
+    <uuid uuid="{9e51529b-ad88-4fae-8f1b-6e01bb5d8831}" />
+    <names>
+        <name lang="de">Wechsler</name>
+        <name lang="en">Changeover contact</name>
+    </names>
+    <kindInformations>
+        <kindInformation name="type">simple</kindInformation>
+        <kindInformation name="state">SW</kindInformation>
+        <kindInformation name="number">1</kindInformation>
+    </kindInformations>
+    <informations>Author: The QElectroTech team; MAM CAE adaptation.
+License: see http://qelectrotech.org/wiki/doc/elements_license
+MAM CAE IEC function template.</informations>
+    <description>
+        <polygon x1="-15" y1="-10" x2="0" y2="10" x3="0" y3="20" closed="false" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black" />
+        <dynamic_text x="13" y="-15.5" z="2" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="ElementInfo" uuid="{8c39b4c5-fd7d-4327-8f85-e6aff7846137}" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular">
+            <text />
+            <info_name>label</info_name>
+        </dynamic_text>
+        <line x1="0" y1="-20" x2="0" y2="-10" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <polygon x1="-20" y1="-20" x2="-20" y2="-8" x3="-12" y3="-8" closed="false" antialias="false" style="line-style:normal;line-weight:normal;filling:none;color:black" />
+        <terminal uuid="{87455108-128f-45fa-820d-f75767127b95}" name="" x="0" y="-20" orientation="n" type="Generic" />
+        <terminal uuid="{12b63c63-983b-49d5-9ef4-5abd9e5d263d}" name="" x="0" y="20" orientation="s" type="Generic" />
+        <terminal uuid="{8ea3dd1c-29da-41d6-a006-05ec80ff872c}" name="" x="-20" y="-20" orientation="n" type="Generic" />
+    </description>
+</definition>

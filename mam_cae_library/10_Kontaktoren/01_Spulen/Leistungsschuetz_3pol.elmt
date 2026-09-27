@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<definition version="0.100.0" type="element" link_type="master" width="40" height="60" hotspot_x="20" hotspot_y="32">
+    <uuid uuid="{7da1d40e-3949-4586-b6f0-4ae566a2eb04}" />
+    <names>
+        <name lang="de">Spule - Leistungsschuetz_3pol</name>
+        <name lang="en">Power contactor, 3 poles with 1 NO + 1 NC auxiliary</name>
+    </names>
+    <kindInformations>
+        <kindInformation name="type">coil</kindInformation>
+        <slaveContactGroups>
+            <group type="NO" subtype="power" contactCount="3" terminalCount="6">
+                <label>1</label>
+                <label>2</label>
+                <label>3</label>
+                <label>4</label>
+                <label>5</label>
+                <label>6</label>
+            </group>
+            <group type="NO" subtype="simple" contactCount="1" terminalCount="2">
+                <label>13</label>
+                <label>14</label>
+            </group>
+            <group type="NC" subtype="simple" contactCount="1" terminalCount="2">
+                <label>21</label>
+                <label>22</label>
+            </group>
+        </slaveContactGroups>
+    </kindInformations>
+    <informations>Author: The QElectroTech team; MAM CAE adaptation.
+License: see http://qelectrotech.org/wiki/doc/elements_license
+MAM CAE IEC function template.</informations>
+    <description>
+        <rect x="-14" y="-8" width="28" height="16" rx="0" ry="0" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <line x1="0" y1="-20" x2="0" y2="-8" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="2" y="11.33" z="3" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="UserText" uuid="{74047e52-6c44-4861-918e-6e38a29916db}" font="Liberation Sans,4,-1,5,25,0,0,0,0,0,Regular">
+            <text>A2</text>
+        </dynamic_text>
+        <dynamic_text x="2" y="-24.67" z="4" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="UserText" uuid="{72bf80a5-9c35-40f5-8f65-9bfb0ef98d5c}" font="Liberation Sans,4,-1,5,25,0,0,0,0,0,Regular">
+            <text>A1</text>
+        </dynamic_text>
+        <line x1="0" y1="8" x2="0" y2="20" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="25" y="-9.17" z="6" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="ElementInfo" uuid="{26e08c62-1d80-4207-9f9e-df00a217e2f3}" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular">
+            <text />
+            <info_name>label</info_name>
+        </dynamic_text>
+        <terminal uuid="{6d905988-3396-4448-a371-004522c50720}" name="A1" x="0" y="-20" orientation="n" type="Generic" />
+        <terminal uuid="{581f2eaf-0ebe-46bc-a667-cd542442628c}" name="A2" x="0" y="20" orientation="s" type="Generic" />
+    </description>
+</definition>

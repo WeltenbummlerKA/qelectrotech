@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<definition version="0.100.0" type="element" link_type="master" width="40" height="60" hotspot_x="20" hotspot_y="32">
+    <uuid uuid="{3ad9a10a-a0a1-40fd-86cc-573f6b2655bd}" />
+    <names>
+        <name lang="de">Spule - Hilfsschuetz_40E</name>
+        <name lang="en">Auxiliary contactor 40E (4 NO)</name>
+    </names>
+    <kindInformations>
+        <kindInformation name="type">coil</kindInformation>
+        <slaveContactGroups>
+            <group type="NO" subtype="simple" contactCount="4" terminalCount="8">
+                <label>13</label>
+                <label>14</label>
+                <label>23</label>
+                <label>24</label>
+                <label>33</label>
+                <label>34</label>
+                <label>43</label>
+                <label>44</label>
+            </group>
+        </slaveContactGroups>
+    </kindInformations>
+    <informations>Author: The QElectroTech team; MAM CAE adaptation.
+License: see http://qelectrotech.org/wiki/doc/elements_license
+MAM CAE IEC function template.</informations>
+    <description>
+        <rect x="-14" y="-8" width="28" height="16" rx="0" ry="0" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <line x1="0" y1="-20" x2="0" y2="-8" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="2" y="11.33" z="3" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="UserText" uuid="{3a616b6b-4bb3-4e38-9540-2b57abc9ad7d}" font="Liberation Sans,4,-1,5,25,0,0,0,0,0,Regular">
+            <text>A2</text>
+        </dynamic_text>
+        <dynamic_text x="2" y="-24.67" z="4" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="UserText" uuid="{2da0d0bb-afeb-49a1-bb5f-34e3517c30f3}" font="Liberation Sans,4,-1,5,25,0,0,0,0,0,Regular">
+            <text>A1</text>
+        </dynamic_text>
+        <line x1="0" y1="8" x2="0" y2="20" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="25" y="-9.17" z="6" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="ElementInfo" uuid="{3577489e-b6ab-4dc3-90ae-85692c5c89ad}" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular">
+            <text />
+            <info_name>label</info_name>
+        </dynamic_text>
+        <terminal uuid="{f834c7af-db98-43ce-8710-9910067ca76e}" name="A1" x="0" y="-20" orientation="n" type="Generic" />
+        <terminal uuid="{45995ccc-8c01-4d09-8249-31c01665ecfe}" name="A2" x="0" y="20" orientation="s" type="Generic" />
+    </description>
+</definition>

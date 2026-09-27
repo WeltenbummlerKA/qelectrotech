@@ -1083,3 +1083,13 @@ Target platforms from project documentation: Windows, GNU/Linux, macOS, and BSDs
 - Boundary preserved: no UI/rendering changes, no persistence/XML schema changes, no migration, no slave `plc_*` rewrite, no address-format inference, and no blocking link behavior.
 - Focused coverage is in `tests/qttest/tst_plcioprojectionservice.cpp` using the existing temporary fixture pattern.
 - Next smallest candidate: re-audit the Contact/CrossRef and PLC projection services for deterministic diagnostics before moving into terminal/potential/export-equivalence coverage.
+
+## MAM CAE Relay and Contactor Library
+- User priority: usable relay/contactor contact mirrors integrated under each coil, with every device contact present and linkable to its own NO/NC/changeover slave symbol. The contact mirror must stay below the coil at the fixed gap implemented in the preceding code slice.
+- Added an importable custom collection at `mam_cae_library/`; it is kept in the parent MAM repository and does not modify the `elements` submodule.
+- Master patterns: generic 2-changeover relay; auxiliary contactor 40E (4 NO); 31E (3 NO + 1 NC); 22E (2 NO + 2 NC); and a generic 3-pole power contactor with one auxiliary NO and NC.
+- Slave symbols: simple NO, simple NC, changeover, power NO, and power NC. They are based on corresponding QET common symbols and retain QElectroTech attribution/license notice.
+- Eaton Schaltungsbuch 10/23, chapter "Hilfsschütze", printed pages 4-2 and 4-3, supports the 40E/31E/22E contact positions and terminal labels (A1/A2; 13-14, 21-22, 31-32, 33-34, 43-44). The patterns are function templates, not verified Eaton articles: coil voltage, accessory combination, ratings, exact ordering code, and product-specific terminal inventory still require the selected device datasheet.
+- XML was parsed and structurally checked: unique generated UUIDs, master/slave metadata, declared terminal-label counts, and group pole counts. `xmllint` passed for all ten `.elmt` definitions.
+- Runtime limit: a direct CLI launch of the current dev bundle failed before QET loaded because `SingleApplication` could not acquire its shared-memory lock. Do not claim GUI import/rendering verified. The next step is to import this collection in a controlled QET session and visually check contact mirror layout, gap, terminal labels, and master/slave linking.
+- Next library extension should be concrete manufacturer/article entries only from authoritative manufacturer datasheets; otherwise continue adding clearly identified generic IEC function patterns.

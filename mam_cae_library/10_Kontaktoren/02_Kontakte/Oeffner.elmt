@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<definition version="0.100.0" type="element" link_type="slave" width="20" height="60" hotspot_x="9" hotspot_y="30">
+    <uuid uuid="{4c87efee-97a4-40dc-8569-4f1ec0f61bda}" />
+    <names>
+        <name lang="de">Öffner</name>
+        <name lang="en">Normally closed contact</name>
+    </names>
+    <kindInformations>
+        <kindInformation name="type">simple</kindInformation>
+        <kindInformation name="state">NC</kindInformation>
+        <kindInformation name="number">1</kindInformation>
+    </kindInformations>
+    <informations>Author: The QElectroTech team; MAM CAE adaptation.
+License: see http://qelectrotech.org/wiki/doc/elements_license
+MAM CAE IEC function template.</informations>
+    <description>
+        <polygon x1="5" y1="-10" x2="0" y2="10" x3="0" y3="20" closed="false" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black" />
+        <line x1="0" y1="-9" x2="6" y2="-9" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <line x1="0" y1="-20" x2="0" y2="-9" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="5.75" y="-9.5" z="4" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="ElementInfo" uuid="{1e672e48-c242-42b3-9965-6bbd6b3c1d6d}" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular">
+            <text />
+            <info_name>label</info_name>
+        </dynamic_text>
+        <terminal uuid="{b12ded77-916c-4e0e-97e0-c417594851b9}" name="" x="0" y="-20" orientation="n" type="Generic" />
+        <terminal uuid="{42bc42c7-b056-4d8e-bcdf-be659fcd0a6b}" name="" x="0" y="20" orientation="s" type="Generic" />
+    </description>
+</definition>

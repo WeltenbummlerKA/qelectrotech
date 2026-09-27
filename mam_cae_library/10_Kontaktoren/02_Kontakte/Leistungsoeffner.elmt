@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<definition version="0.100.0" type="element" link_type="slave" width="20" height="60" hotspot_x="9" hotspot_y="30">
+    <uuid uuid="{d14ac17c-c399-4fa0-9d8b-a9efab5283ce}" />
+    <names>
+        <name lang="de">Leistungsöffner, 1-polig</name>
+        <name lang="en">Power NC contact, 1 pole</name>
+    </names>
+    <kindInformations>
+        <kindInformation name="type">power</kindInformation>
+        <kindInformation name="state">NC</kindInformation>
+        <kindInformation name="number">1</kindInformation>
+    </kindInformations>
+    <informations>Author: The QElectroTech team; MAM CAE adaptation.
+License: see http://qelectrotech.org/wiki/doc/elements_license
+MAM CAE IEC function template.</informations>
+    <description>
+        <polygon x1="5" y1="-10" x2="0" y2="10" x3="0" y3="20" closed="false" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black" />
+        <line x1="0" y1="-9" x2="6" y2="-9" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <line x1="0" y1="-20" x2="0" y2="-9" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="5.75" y="-9.5" z="4" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="ElementInfo" uuid="{7e4c948b-c0bd-4e02-a843-9639306799d6}" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular">
+            <text />
+            <info_name>label</info_name>
+        </dynamic_text>
+        <arc x="-2.5" y="-14.5" width="5" height="5" start="270" angle="180" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="true" />
+        <terminal uuid="{a38d9850-8a26-41f9-be30-e6c16a852cc9}" name="" x="0" y="20" orientation="s" type="Generic" />
+        <terminal uuid="{4a1f0375-6226-4714-93fa-74cfbb3cd2be}" name="" x="0" y="-20" orientation="n" type="Generic" />
+    </description>
+</definition>

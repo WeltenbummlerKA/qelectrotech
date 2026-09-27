@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<definition version="0.100.0" type="element" link_type="slave" width="20" height="60" hotspot_x="10" hotspot_y="30">
+    <uuid uuid="{7c2e1208-00ba-4e92-a624-bd25585e4247}" />
+    <names>
+        <name lang="de">Schließer</name>
+        <name lang="en">Normally open contact</name>
+    </names>
+    <kindInformations>
+        <kindInformation name="type">simple</kindInformation>
+        <kindInformation name="state">NO</kindInformation>
+        <kindInformation name="number">1</kindInformation>
+    </kindInformations>
+    <informations>Author: The QElectroTech team; MAM CAE adaptation.
+License: see http://qelectrotech.org/wiki/doc/elements_license
+MAM CAE IEC function template.</informations>
+    <description>
+        <polygon x1="-5" y1="-10" x2="0" y2="10" x3="0" y3="20" closed="false" antialias="true" style="line-style:normal;line-weight:normal;filling:none;color:black" />
+        <dynamic_text x="2.75" y="-9.5" z="2" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="ElementInfo" uuid="{d8c1e4c5-574c-47b6-80d6-79f2feba9673}" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular">
+            <text />
+            <info_name>label</info_name>
+        </dynamic_text>
+        <line x1="0" y1="-20" x2="0" y2="-10" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <terminal uuid="{1367328b-3dfd-452b-9605-355da7ef9cc6}" name="" x="0" y="-20" orientation="n" type="Generic" />
+        <terminal uuid="{2c3485cd-2441-4a4e-9a04-44ad6be6dc7f}" name="" x="0" y="20" orientation="s" type="Generic" />
+    </description>
+</definition>
