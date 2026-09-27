@@ -379,7 +379,7 @@ Build a usable CAE library for relay and contactor devices, beginning with compl
 - Build warnings observed in unchanged upstream source: self-assignment warning in `elementsmover.cpp`, ignored `nodiscard` result in `qet.cpp`, and an existing TODO pragma message in `openelmtcommand.cpp`.
 
 ## Next Planned Step
-Import the MAM collection into QElectroTech and visually verify the relay/contactor contact mirrors and master/slave linking on a schematic. Then extend the library with article-specific devices only where authoritative manufacturer documentation gives the exact contact inventory and terminal labels.
+Add device/accessory composition to QElectroTech so attaching an auxiliary contact block to an already placed contactor adds its contacts and terminal labels to the coil contact mirror. Then visually verify the behavior in QET; the current library's combined Eaton profiles are a documented interim representation, not dynamic attachment.
 
 ## Change Log
 - 2026-09-21: Created baseline progress record and documented repository/remotes.
@@ -430,3 +430,4 @@ Import the MAM collection into QElectroTech and visually verify the relay/contac
 - 2026-09-26: Recorded user-controlled manual `open -n build/baseline/qelectrotech.app` launch as successful; GUI startup is partially verified, the earlier Codex/ChatGPT crash remains a launch-context/dev-bundle finding, and clean install/deploy/codesign/packaging remain open.
 - 2026-09-26: Re-audited Contact/CrossRef and PLC IO projection diagnostics; no service/test correction was needed, and the current scope remains read-only projection/validation with no UI, persistence, XML schema, Core, runtime, or packaging change.
 - 2026-09-27: Added `mam_cae_library/`, an importable QET custom collection with 5 master coil patterns and 5 slave contact symbols. Hilfsschütz 40E/31E/22E contact layouts follow Eaton Schaltungsbuch 10/23, pp. 4-2–4-3; generic relay and power-contactor patterns are explicitly labeled as templates, not product articles. XML and contact-group counts validated; GUI import/rendering remains unverified because the dev executable could not acquire its SingleApplication shared-memory lock.
+- 2026-09-27: Corrected the library gap for add-on contact blocks using Eaton Schaltungsbuch p. 4-3: added complete DILA-40E+XHI04, DILA-31+XHI13, and DILA-22+XHI22 profiles (each 4 NO + 4 NC, with the shown terminal labels). These are selectable combined coil definitions; adding a block to an already placed coil still does not dynamically update the mirror. That requires a separate device/accessory composition feature in QET.

@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<definition version="0.100.0" type="element" link_type="master" width="40" height="60" hotspot_x="20" hotspot_y="32">
+    <uuid uuid="{ee35fd69-ced0-45fd-a44b-0eff97d4ba58}" />
+    <names>
+        <name lang="de">DILA-31 + XHI13</name>
+        <name lang="en">DILA-31 with XHI13 (4 NO + 4 NC)</name>
+    </names>
+    <kindInformations>
+        <kindInformation name="type">coil</kindInformation>
+        <slaveContactGroups>
+            <group type="NO" subtype="simple" contactCount="4" terminalCount="8">
+                <label>13</label>
+                <label>14</label>
+                <label>33</label>
+                <label>34</label>
+                <label>43</label>
+                <label>44</label>
+                <label>53</label>
+                <label>54</label>
+            </group>
+            <group type="NC" subtype="simple" contactCount="4" terminalCount="8">
+                <label>21</label>
+                <label>22</label>
+                <label>61</label>
+                <label>62</label>
+                <label>71</label>
+                <label>72</label>
+                <label>81</label>
+                <label>82</label>
+            </group>
+        </slaveContactGroups>
+    </kindInformations>
+    <informations>Author: The QElectroTech team; MAM CAE adaptation.
+License: see http://qelectrotech.org/wiki/doc/elements_license
+Eaton Schaltungsbuch 10/23, Hilfsschütze, p. 4-3. Function template, not an orderable article.</informations>
+    <description>
+        <rect x="-14" y="-8" width="28" height="16" rx="0" ry="0" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <line x1="0" y1="-20" x2="0" y2="-8" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="2" y="11.33" z="3" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="UserText" uuid="{18ec6850-f4be-48c7-b401-a8e12d6c32ab}" font="Liberation Sans,4,-1,5,25,0,0,0,0,0,Regular">
+            <text>A2</text>
+        </dynamic_text>
+        <dynamic_text x="2" y="-24.67" z="4" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="UserText" uuid="{ca853849-60ce-4b8b-a25f-699960f01ef4}" font="Liberation Sans,4,-1,5,25,0,0,0,0,0,Regular">
+            <text>A1</text>
+        </dynamic_text>
+        <line x1="0" y1="8" x2="0" y2="20" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false" />
+        <dynamic_text x="25" y="-9.17" z="6" text_width="-1" Halignment="AlignLeft" Valignment="AlignTop" frame="false" rotation="0" keep_visual_rotation="false" text_from="ElementInfo" uuid="{8f08345c-2870-452f-916a-9d0aeb9ac7c5}" font="Liberation Sans,9,-1,5,50,0,0,0,0,0,Regular">
+            <text />
+            <info_name>label</info_name>
+        </dynamic_text>
+        <terminal uuid="{707dd9ad-df61-4216-a77c-64d4f73f0cbd}" name="A1" x="0" y="-20" orientation="n" type="Generic" />
+        <terminal uuid="{5b6072eb-2e00-4f23-91a9-bc4d45e3c4fb}" name="A2" x="0" y="20" orientation="s" type="Generic" />
+    </description>
+</definition>
