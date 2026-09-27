@@ -194,8 +194,12 @@ QHash<QString, XRefProperties> XRefProperties::defaultProperties()
 	foreach (QString key, keys)
 	{
 		XRefProperties properties;
-		QString str("diagrameditor/defaultxref");
-		properties.fromSettings(settings, str += key);
+		const QString prefix = QStringLiteral("diagrameditor/defaultxref") % key;
+		properties.fromSettings(settings, prefix);
+		// A new installation should show the actual contact functions at
+		// relay/contactor coils. Preserve an explicitly saved user choice.
+		if (key == "coil" && !settings.contains(prefix % "displayhas"))
+			properties.setDisplayHas(Contacts);
 		hash.insert(key, properties);
 	}
 
@@ -220,5 +224,4 @@ bool XRefProperties::operator !=(const XRefProperties &xrp) const
 {
 	return (! (*this == xrp));
 }
-
 

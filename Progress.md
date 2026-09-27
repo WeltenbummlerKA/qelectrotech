@@ -214,9 +214,11 @@ Keep `mam/qet-projections-runtime-qa` as the secured fork state and decide the p
   Focused CLI coverage is in `tst_mam_summary_export`, checking the shared header plus expected contact and terminal/potential warning rows.
 - Added the first user-facing MAM Summary example on 2026-09-27 to `Spec_MAM_Report_ReadOnly.md`, including the CLI command, CSV header, and representative separated row types.
   Extended `tst_mam_summary_export` to pin deterministic terminal/potential row ordering (`W005` through `W011`) from the workflow fixture. This remains read-only documentation/test coverage with no product behavior changes.
+- Started the first visible CAE slice on 2026-09-27: coil contact mirrors in contact-display mode are anchored below the coil with a fixed 20-unit gap, independent of the old page/label anchor choice. A fresh installation defaults coil cross-references to contact symbols unless the user already saved an explicit preference. Coil mirrors show every declared master contact group and every linked slave; linked symbols retain their existing double-click navigation.
+  The application and focused project-load test build; `tst_contactcrossrefprojectionservice` passes. The current standard symbol library does not declare model-specific free-contact inventories, so unlinked contacts appear only when the master defines those groups. Manual GUI inspection and real relay/contactor inventory coverage remain open.
 
 ## In Progress
-- None.
+- Coil contact mirror: first visible behavior slice implemented; interactive GUI review and model-specific free-contact inventories remain open.
 
 ## Pending
 - Keep `mam/qet-projections-runtime-qa` as the current private/MAM fork line unless an explicit private-main branch decision is made.

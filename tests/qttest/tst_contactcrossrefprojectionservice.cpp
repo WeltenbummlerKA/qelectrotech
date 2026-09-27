@@ -18,6 +18,8 @@
 #include <QtTest>
 
 #include "contactcrossrefprojectionservice.h"
+#include "qetgraphicsitem/crossrefitem.h"
+#include "qetgraphicsitem/masterelement.h"
 #include "qetmessagebox.h"
 #include "qetproject.h"
 
@@ -159,6 +161,44 @@ private slots:
 		QCOMPARE(nc_assignment->group.terminal_labels, QStringList({QStringLiteral("21"), QStringLiteral("22")}));
 		QVERIFY2(nc_assignment->validation_messages.isEmpty(),
 				 qPrintable(nc_assignment->validation_messages.join(QStringLiteral("; "))));
+	}
+
+	void coilContactMirrorIsAnchoredBelowCoilAndShowsConfiguredContacts()
+	{
+		initHeadlessProjectLoad();
+		QETProject project(fixturePath());
+		QCOMPARE(project.state(), QETProject::Ok);
+
+		MasterElement *master = nullptr;
+		for (Diagram *diagram : project.diagrams()) {
+			for (Element *element : diagram->elements()) {
+				if (element->uuid() == kMasterUuid)
+					master = qobject_cast<MasterElement *>(element);
+			}
+		}
+		QVERIFY(master);
+		QCOMPARE(master->kindInformations().value(QStringLiteral("type")).toString(),
+			QStringLiteral("coil"));
+
+		XRefProperties properties = project.defaultXRefProperties(QStringLiteral("coil"));
+		properties.setDisplayHas(XRefProperties::Contacts);
+		properties.setShowAllConfiguredSlaves(false);
+		properties.setSnapTo(XRefProperties::Label);
+		project.setDefaultXRefProperties(QStringLiteral("coil"), properties);
+
+		CrossRefItem *mirror = nullptr;
+		for (QGraphicsItem *child : master->childItems()) {
+			if (child->type() == CrossRefItem::Type)
+				mirror = static_cast<CrossRefItem *>(child);
+		}
+		QVERIFY(mirror);
+		QVERIFY(!mirror->boundingRect().isEmpty());
+		QCOMPARE(mirror->parentItem(), static_cast<QGraphicsItem *>(master));
+		QCOMPARE(
+			mirror->mapRectToScene(mirror->boundingRect()).top(),
+			master->mapRectToScene(master->boundingRect()).bottom() + 20.0);
+		QVERIFY(CrossRefItem::showAllConfiguredSlaves(master, properties));
+		QCOMPARE(mirror->hoveredContactsMap().keys().size(), 2);
 	}
 
 	void invalidGroupIndexVariantsProduceValidationMessages()

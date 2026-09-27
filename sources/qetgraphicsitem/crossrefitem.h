@@ -63,9 +63,9 @@ class CrossRefItem : public QGraphicsObject
 		enum { Type = UserType + 1009 };
 		int type() const override { return Type; }
 
-		/// Returns true when \a xrp asks the contact comb of \a elmt to show
-		/// every slave contact the master defines, even the ones no slave is
-		/// linked to yet. \a elmt must be a master element.
+		/// Returns true when the contact comb of \a elmt shows every slave
+		/// contact group the master defines, including groups without a linked
+		/// slave. Coil contact mirrors do this automatically in contact mode.
 		static bool showAllConfiguredSlaves(
 				const Element *elmt,
 				const XRefProperties &xrp);
@@ -123,6 +123,7 @@ class CrossRefItem : public QGraphicsObject
 
 	private:
 		void linkedChanged();
+		bool isCoilContactMirror() const;
 		void buildHeaderContact(QPainter &painter, QPointF no_pos, QPointF nc_pos);
 		void setUpCrossBoundingRect(QPainter &painter);
 		void drawAsCross(QPainter &painter);
@@ -163,4 +164,3 @@ class CrossRefItem : public QGraphicsObject
 };
 
 #endif // CROSSREFITEM_H
-

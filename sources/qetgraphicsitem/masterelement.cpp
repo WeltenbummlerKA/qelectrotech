@@ -63,7 +63,10 @@ void MasterElement::linkToElement(Element *elmt)
 		elmt->linkToElement(this);
 
 		XRefProperties xrp = diagram()->project()->defaultXRefProperties(kindInformations()["type"].toString());
-		if (!m_Xref_item && (xrp.snapTo() == XRefProperties::Bottom ||
+		const bool coil_contact_mirror =
+			kindInformations().value("type").toString() == "coil"
+			&& xrp.displayHas() == XRefProperties::Contacts;
+		if (!m_Xref_item && (xrp.snapTo() == XRefProperties::Bottom || coil_contact_mirror ||
 			m_data.m_master_type == ElementData::PLC))
 			m_Xref_item = new CrossRefItem(this); //create cross ref item if not yet	
 
@@ -185,7 +188,10 @@ void MasterElement::xrefPropertiesChanged()
 		return;
 
 	XRefProperties xrp = diagram()->project()->defaultXRefProperties(kindInformations()["type"].toString());
-	if(xrp.snapTo() == XRefProperties::Bottom)
+	const bool coil_contact_mirror =
+		kindInformations().value("type").toString() == "coil"
+		&& xrp.displayHas() == XRefProperties::Contacts;
+	if(xrp.snapTo() == XRefProperties::Bottom || coil_contact_mirror)
 	{
 			//We create a Xref, and just after we call aboutDeleteXref,
 			//because the Xref may be useless.
@@ -217,7 +223,10 @@ bool MasterElement::mustShowXrefWithoutSlave() const
 	const XRefProperties xrp = diagram()->project()->defaultXRefProperties(
 				kindInformations()["type"].toString());
 
-	return xrp.snapTo() == XRefProperties::Bottom
+	const bool coil_contact_mirror =
+		kindInformations().value("type").toString() == "coil"
+		&& xrp.displayHas() == XRefProperties::Contacts;
+	return (xrp.snapTo() == XRefProperties::Bottom || coil_contact_mirror)
 			&& CrossRefItem::showAllConfiguredSlaves(this, xrp);
 }
 
@@ -241,7 +250,10 @@ void MasterElement::aboutDeleteXref()
 		return;
 
 	XRefProperties xrp = diagram()->project()->defaultXRefProperties(kindInformations()["type"].toString());
-	if (xrp.snapTo() != XRefProperties::Bottom && m_Xref_item)
+	const bool coil_contact_mirror =
+		kindInformations().value("type").toString() == "coil"
+		&& xrp.displayHas() == XRefProperties::Contacts;
+	if (xrp.snapTo() != XRefProperties::Bottom && !coil_contact_mirror && m_Xref_item)
 	{
 		delete m_Xref_item;
 		m_Xref_item = nullptr;

@@ -36,6 +36,7 @@
 static int header = 5;
 //define the minimal height of the cross (without header)
 static int cross_min_height = 33;
+static constexpr qreal coil_contact_mirror_gap = 20.0;
 
 /**
 	@brief CrossRefItem::CrossRefItem
@@ -115,9 +116,17 @@ void CrossRefItem::setUpConnection()
 		set=true;
 	else if(m_properties.snapTo() == XRefProperties::Bottom && !m_text && !m_group) //Snap to bottom of element and parent is the element itself
 	{
+		m_update_connection << connect(m_element, &Element::xChanged, this, &CrossRefItem::autoPos);
 		m_update_connection << connect(m_element, &Element::yChanged, this, &CrossRefItem::autoPos);
 		m_update_connection << connect(m_element, &Element::rotationChanged, this, &CrossRefItem::autoPos);
 		set=true;
+	}
+	else if (isCoilContactMirror())
+	{
+		m_update_connection << connect(m_element, &Element::xChanged, this, &CrossRefItem::autoPos);
+		m_update_connection << connect(m_element, &Element::yChanged, this, &CrossRefItem::autoPos);
+		m_update_connection << connect(m_element, &Element::rotationChanged, this, &CrossRefItem::autoPos);
+		set = true;
 	}
 	// For PLC masters, always set up connections for update notifications
 	// (page reorder, diagram removal, etc.)
@@ -201,20 +210,27 @@ QString CrossRefItem::elementPositionText(
 	@param elmt : the element displaying the cross reference
 	@param xrp : xref properties of that element
 	@return true when the contact comb must show every slave contact the
-	master defines, even those no slave is linked to yet. That is the case
-	when the user asked for it, when the comb (contacts) display is the
-	one in use, and when the master really declares contact groups --
-	an element which declares none behaves exactly as before.
+	master defines, even those no slave is linked to yet. Coil contact mirrors
+	show the full declared contact set whenever contact display is selected;
+	other master types keep the existing user-controlled setting.
 */
 bool CrossRefItem::showAllConfiguredSlaves(
 		const Element *elmt,
 		const XRefProperties &xrp)
 {
 	if (!elmt) return false;
-	if (!xrp.showAllConfiguredSlaves()) return false;
 	if (xrp.displayHas() != XRefProperties::Contacts) return false;
+	const bool is_coil = elmt->kindInformations().value("type").toString() == "coil";
+	if (!is_coil && !xrp.showAllConfiguredSlaves()) return false;
 
 	return !elmt->elementData().m_slave_contact_groups.isEmpty();
+}
+
+bool CrossRefItem::isCoilContactMirror() const
+{
+	return !m_text && !m_group
+		&& m_element->kindInformations().value("type").toString() == "coil"
+		&& m_properties.displayHas() == XRefProperties::Contacts;
 }
 
 /**
@@ -241,7 +257,8 @@ void CrossRefItem::updateProperties()
 		hide();
 		if(m_properties.snapTo() == XRefProperties::Label && (m_text || m_group)) //Snap to label and parent is text or group
 			show();
-		else if((m_properties.snapTo() == XRefProperties::Bottom && !m_text && !m_group)) //Snap to bottom of element is the parent
+		else if((m_properties.snapTo() == XRefProperties::Bottom && !m_text && !m_group)
+				|| isCoilContactMirror()) //Coil contact mirrors belong to the coil
 			show();
 		
 		setUpConnection();
@@ -318,6 +335,15 @@ void CrossRefItem::updateLabel()
 */
 void CrossRefItem::autoPos()
 {
+	if (isCoilContactMirror()) {
+		const QRectF element_rect = m_element->boundingRect();
+		const QRectF mirror_rect = boundingRect();
+		setPos(
+			element_rect.center().x() - mirror_rect.center().x(),
+			element_rect.bottom() + coil_contact_mirror_gap - mirror_rect.top());
+		return;
+	}
+
 	// For PLC masters, position is set by updateLabel() based on
 	// m_plc_table_positions - don't override it here.
 	if (m_element->elementData().m_master_type == ElementData::PLC)
