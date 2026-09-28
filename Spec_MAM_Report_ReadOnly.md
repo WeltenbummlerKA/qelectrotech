@@ -32,6 +32,7 @@ Die kombinierte Report-Familie bleibt fachlich getrennt und kann spaeter durch e
 - `mam-plc-io`: bestehender PLC-IO-Kanalreport aus `PlcIoProjectionService`.
 - `mam-contact-crossref`: naechster kleiner Report ueber `ContactCrossRefProjectionService`, mit Master-/Slave-Zuordnung, Gruppenindex, Gruppenmetadaten und Warnungen.
 - `mam-terminal-potential`: naechster Report fuer Terminal-, Leiter- und Potential-Kontext, aus bestehenden Live-Graph- und Export-/Datenbank-Fakten, ohne Terminal-Strip-Ownership zu behaupten.
+- `mam-terminal-strip`: Klemmenleisten-Detailreport aus bestehenden `TerminalStrip`-Projektobjekten, ohne elektrische Potential-Wahrheit oder automatische Klemmennummerierung zu behaupten.
 - `mam-summary`: erste kombinierte Arbeitsliste mit getrennten Zeilen je PLC-IO-, Contact/CrossRef- und Terminal/Potential-Fakt. Sie ersetzt die Detail-CSVs nicht und erfindet keine fachlichen Joins.
 
 Ein zukuenftiger kombinierter Export darf mehrere CSV-Dateien schreiben oder eine klar benannte Summary ergaenzen. Er soll die Detailtabellen nicht zu einer breiten Misch-Tabelle verschmelzen.
@@ -205,6 +206,38 @@ Bewusst noch nicht enthalten:
 Nicht in diesem Slice:
 
 - Terminal-strip facts, bridge semantics, cable/core ownership, UI, persistence, XML schema, runtime/package work.
+
+## Implementierter Klemmenleisten-Slice
+
+Der erste Klemmenleisten-Schritt ist `--export-mam-terminal-strip <project.qet> <output.csv>`.
+
+Ziel:
+
+- bestehende Klemmenleisten, physische Reihenfolge, Ebenen und Bruecken sichtbar/pruefbar machen;
+- eine stabile CSV-Flaeche fuer MAM-Review und Regression schaffen;
+- keine automatische Nummerierung, keine UI und keine Projektkorrektur ausloesen.
+
+Minimalfelder:
+
+- `strip_installation`, `strip_location`, `strip_name`, `strip_uuid`
+- `physical_index`, `level`, `level_count`
+- `terminal_label`, `terminal_uuid`, `terminal_folio`
+- `terminal_xref`, `terminal_name`, `conductor`
+- `bridge_uuid`, `bridge_color`
+- `status`, `warnings`
+
+Source-of-truth-Grenze:
+
+- Die Daten stammen aus `QETProject::terminalStrip()` und den vorhandenen `TerminalStrip`-/`PhysicalTerminal`-/`RealTerminal`-/`TerminalStripBridge`-Objekten.
+- `conductor` ist nur der erste von `RealTerminal::conductor()` beobachtete Leitertext und noch kein Kabel-/Adermodell.
+- Klemmenleisten bleiben getrennt von `mam-terminal-potential`; eine Klemme in einer Leiste ist nicht automatisch eine elektrische Potentialentscheidung.
+
+Bewusst nicht enthalten:
+
+- Klemmennummern-Automatik;
+- Klemmenplan-/Aufbauplan-Layout;
+- Kabel-/Adermodell;
+- UI, Persistenz, XML-Schema, Device/Core-Migration oder Reparaturfunktion.
 
 ## Sichtbare Strompfad-Darstellung
 

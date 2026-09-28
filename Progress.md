@@ -116,6 +116,19 @@ Das Ziel ist ein zusammenhängender Schaltplan-Arbeitsablauf. Jede Stufe muss im
 
 **Spätere Auswertungen:** Betriebsmittel-/BMK-Übersicht, Klemmenplan und physischer Aufbauplan. Sie bauen auf den geprüften Schaltplandaten auf und sind nicht Teil des ersten Grundlagenumfangs.
 
+### 2026-09-28 - Punkt 4/aktuell Punkt 3: Klemmenleisten erster Read-only-Slice
+
+Completed:
+- Begonnen mit dem vom Nutzer aktuell als Punkt 3 bezeichneten Klemmenleisten-Thema. Die ältere Liste führt denselben Inhalt als Punkt 4; aktuelle Nutzerpriorität ist maßgeblich.
+- Neuer CLI-Export `--export-mam-terminal-strip <project.qet> <output.csv>` ergänzt.
+- Der Export liest ausschließlich bestehende `QETProject`-/`TerminalStrip`-/`PhysicalTerminal`-/`RealTerminal`-/`TerminalStripBridge`-Daten und schreibt nichts ins Projekt.
+- Exportierte Erstfelder: Leiste (`installation`, `location`, `name`, UUID), physische Reihenfolge, Ebene, Terminal-UUID, Folio, XRef, Elementname, erster beobachteter Leitertext, Brücken-UUID/-Farbe, Status/Warnungen.
+- Neuer QtTest `tst_mam_terminal_strip_export` prüft die vorhandene synthetische Fixture `terminal_strip_synthetic_minimal.qet`: zwei Klemmen in Reihenfolge 1/2, Ebene 1, gleiche Brücke, keine Warnungen.
+
+Bewusste Grenze:
+- Keine UI, keine automatische Klemmennummerierung, keine XML-Schema-Änderung, keine Reparatur, keine Aussage, dass Klemmenleisten elektrische Potential-Wahrheit sind.
+- Der Klemmenlisten-Export bleibt getrennt von `mam-terminal-potential`; spätere fachliche Zusammenführung erst nach sichtbarer Projektvalidierung.
+
 ### 2026-09-28 - Bindende Ganzblattreferenz und zurückgewiesene Umsetzung
 - Verbindliche Bilddatei ist `/Volumes/MAM Home/Github/QElectrotech_MAM/Rahmenvorlage.png` (4532 × 3210 px); ältere Desktop-Screenshots und frühere Rekonstruktionen sind nachrangig.
 - Der Nutzer hat die letzte Rahmenumsetzung ausdrücklich als falsch/zurückgewiesen bezeichnet. Keine frühere Headless-Ansicht oder Formulierung „visuell geprüft“ bedeutet Abnahme.

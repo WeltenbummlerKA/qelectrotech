@@ -32,6 +32,10 @@
 #include "qetgraphicsitem/element.h"
 #include "qetgraphicsitem/terminal.h"
 #include "qetproject.h"
+#include "TerminalStrip/physicalterminal.h"
+#include "TerminalStrip/realterminal.h"
+#include "TerminalStrip/terminalstrip.h"
+#include "TerminalStrip/terminalstripbridge.h"
 #include "titleblockproperties.h"
 #include "wiringlistexport.h"
 
@@ -82,6 +86,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-mam-plc-io", "mam-plc-io"},
 		{"--export-mam-summary", "mam-summary"},
 		{"--export-mam-terminal-potential", "mam-terminal-potential"},
+		{"--export-mam-terminal-strip", "mam-terminal-strip"},
 		{"--info", "info"},
 		{"--check-elements", "check"},
 		{"--resave", "resave"},
@@ -879,6 +884,109 @@ int exportMamTerminalPotential(QETProject &project, const QString &output)
 	return 0;
 }
 
+/// MAM-specific terminal-strip report, one row per real terminal.
+/// It exposes the existing QET terminal-strip model without changing it.
+int exportMamTerminalStrip(QETProject &project, const QString &output)
+{
+	const QHash<Diagram *, int> folios = diagramFolioIndex(project);
+	QVector<TerminalStrip *> strips = project.terminalStrip();
+	std::sort(strips.begin(), strips.end(), [](TerminalStrip *left, TerminalStrip *right) {
+		const QString left_key = left->installation()
+			% QLatin1Char('|') % left->location()
+			% QLatin1Char('|') % left->name()
+			% QLatin1Char('|') % uuidString(left->uuid());
+		const QString right_key = right->installation()
+			% QLatin1Char('|') % right->location()
+			% QLatin1Char('|') % right->name()
+			% QLatin1Char('|') % uuidString(right->uuid());
+		return left_key < right_key;
+	});
+
+	static const QStringList columns {
+		"strip_installation", "strip_location", "strip_name", "strip_uuid",
+		"physical_index", "level", "level_count",
+		"terminal_label", "terminal_uuid", "terminal_folio",
+		"terminal_xref", "terminal_name", "conductor",
+		"bridge_uuid", "bridge_color", "status", "warnings"
+	};
+
+	QString csv = columns.join(";") % "\n";
+	int rows = 0;
+	int warnings = 0;
+	for (TerminalStrip *strip : strips) {
+		if (!strip)
+			continue;
+
+		for (int physical_index = 0; physical_index < strip->physicalTerminalCount(); ++physical_index) {
+			const QSharedPointer<PhysicalTerminal> physical = strip->physicalTerminal(physical_index);
+			if (!physical)
+				continue;
+
+			for (const QSharedPointer<RealTerminal> &real : physical->realTerminals()) {
+				if (!real)
+					continue;
+
+				Element *element = real->element();
+				QSharedPointer<TerminalStripBridge> bridge = real->bridge();
+				QStringList row_warnings;
+				if (strip->name().isEmpty())
+					row_warnings << QStringLiteral("empty strip_name");
+				if (real->elementUuid().isNull())
+					row_warnings << QStringLiteral("empty terminal_uuid");
+				if (!element)
+					row_warnings << QStringLiteral("missing terminal element");
+
+				const QString status = row_warnings.isEmpty()
+					? QStringLiteral("OK")
+					: QStringLiteral("WARNING");
+				if (!row_warnings.isEmpty())
+					++warnings;
+
+				const QStringList values {
+					strip->installation(),
+					strip->location(),
+					strip->name(),
+					uuidString(strip->uuid()),
+					QString::number(physical_index + 1),
+					QString::number(real->level() + 1),
+					QString::number(physical->levelCount()),
+					real->label(),
+					uuidString(real->elementUuid()),
+					element && element->diagram()
+						? QString::number(folios.value(element->diagram(), 0))
+						: QString(),
+					real->Xref(),
+					element ? element->name() : QString(),
+					real->conductor(),
+					bridge ? uuidString(bridge->uuid()) : QString(),
+					bridge ? bridge->color().name(QColor::HexRgb) : QString(),
+					status,
+					row_warnings.join(QStringLiteral(" | "))
+				};
+
+				QStringList escaped;
+				for (const QString &value : values)
+					escaped << csvField(value);
+				csv += escaped.join(QLatin1Char(';')) % "\n";
+				++rows;
+			}
+		}
+	}
+
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << csv;
+	file.close();
+	out << "Exported " << rows
+		<< " MAM TerminalStrip terminal(s), "
+		<< warnings << " warning row(s) -> " << output << "\n";
+	return 0;
+}
+
 /// Cross-references: each linkable element (coil / contact / report) and the
 /// elements it links to, flagging masters/slaves with no link as unresolved.
 int exportLinks(QETProject &project, const QString &output)
@@ -1413,6 +1521,8 @@ int run(const QStringList &args)
 		return exportMamSummary(project, output);
 	if (format == "mam-terminal-potential")
 		return exportMamTerminalPotential(project, output);
+	if (format == "mam-terminal-strip")
+		return exportMamTerminalStrip(project, output);
 	if (format == "resave")
 		return resaveProject(project, output);
 	if (format == "settb")
