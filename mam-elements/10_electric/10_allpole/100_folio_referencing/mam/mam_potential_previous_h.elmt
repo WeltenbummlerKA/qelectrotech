@@ -1,0 +1,30 @@
+<definition version="0.100.1" type="element" link_type="previous_report" width="70" height="28" hotspot_x="18" hotspot_y="14">
+    <uuid uuid="{bf881ea0-b897-4556-8327-1e4cc1e0ca6e}"/>
+    <names>
+        <name lang="de">MAM Potential Fortfuehrung links</name>
+        <name lang="en">MAM potential continuation left</name>
+    </names>
+    <informations>MAM pilot element for visible WSCAD-style potential continuation. Fields: label, xref, voltage.</informations>
+    <kindInformations>
+        <kindInformation name="potential" show="1"/>
+        <kindInformation name="xref" show="1"/>
+        <kindInformation name="voltage" show="1"/>
+    </kindInformations>
+    <description>
+        <dynamic_text frame="false" Halignment="AlignRight" x="-62" y="-12" z="3" rotation="0" font="Arial,4.5,-1,5,50,0,0,0,0,0,Regular" text_width="-1" uuid="{53b0af64-1291-474d-bec6-b3fa40283d81}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+            <text></text>
+            <info_name>voltage</info_name>
+        </dynamic_text>
+        <dynamic_text frame="false" Halignment="AlignRight" x="-35" y="-16" z="3" rotation="0" font="Arial,10,-1,5,75,0,0,0,0,0,Regular" text_width="-1" uuid="{3d6e41f6-5c49-4215-94ff-d3a124c05390}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+            <text></text>
+            <info_name>potential</info_name>
+        </dynamic_text>
+        <dynamic_text frame="false" Halignment="AlignRight" x="-70" y="-9" z="3" rotation="0" font="Arial,5.5,-1,5,50,0,0,0,0,0,Regular" color="#202020" text_width="-1" uuid="{2441142c-38bb-4264-9bbd-7706e7056114}" keep_visual_rotation="true" text_from="ElementInfo" Valignment="AlignTop">
+            <text></text>
+            <info_name>xref</info_name>
+        </dynamic_text>
+        <line x1="-14" y1="0" x2="30" y2="0" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false"/>
+        <polygon x1="-14" y1="-5" x2="-14" y2="5" x3="-30" y3="0" antialias="true" closed="true" style="line-style:normal;line-weight:normal;filling:black;color:black"/>
+        <terminal uuid="{9ec43cf4-2e9d-452f-ae14-3a3b77f917c0}" name="1" x="30" y="0" orientation="e" type="Generic"/>
+    </description>
+</definition>

@@ -680,6 +680,7 @@ Visually verify coil mirrors for the rest of the Eaton contactor/relay combinati
 
 ### 2026-09-28 - Sichtbarer Strompfad-Fortfuehrungsprototyp
 - Neue MAM-Pilot-Bibliothekselemente unter `elements/10_electric/10_allpole/100_folio_referencing/mam/` angelegt: horizontale Fortfuehrung rechts, horizontale Fortfuehrung links und Fortfuehrung nach unten.
+- Die drei MAM-Pilot-Elemente liegen zusaetzlich im Hauptrepo unter `mam-elements/10_electric/10_allpole/100_folio_referencing/mam/`. Dieser Pfad ist der MAM-Fork-eigene Ablageort; es wird nichts in das offizielle `qelectrotech-elements`-Repository gepusht.
 - Die Elemente nutzen editierbare Zusatzfelder `potential`, `xref` und `voltage`, damit die sichtbare Darstellung aus Potentialname, Gegenstelle und optionaler Spannung aufgebaut werden kann, ohne das QET-Sonderfeld `label` zu missbrauchen.
 - `examples/MAM_Strompfade_2Seiten.qet` enthaelt jetzt sichtbare Pfeil-Prototypen: Seite 1 zeigt `400VAC` mit `1L1` bis `1L3` nach rechts sowie `0VAC` mit `1N`/`2N` nach unten; Seite 2 zeigt passende eingehende Gegenstellen.
 - Verifikation Windows: `--check-elements` fuer die drei neuen MAM-Elemente meldet 3 OK, 0 Warnungen, 0 Fehler. `--export-png` rendert zwei Seiten nach `build/mam-strompfade-visible-png/`; Crops `crop-page1-arrows.png` und `crop-page2-arrows.png` zeigen Pfeil, grossen Potentialnamen und kleinen Gegenstellenverweis. `--export-mam-terminal-potential` bleibt bei 14 Leitern und 0 Warnungen.
