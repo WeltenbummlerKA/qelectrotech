@@ -82,6 +82,10 @@ void ProjectPrintWindow::launchDialog(QETProject *project, QPrinter::OutputForma
 		printer_->setCreator(QString("QElectroTech %1").arg(QetVersion::displayedVersion()));
 		printer_->setOutputFileName(file_name);
 		printer_->setOutputFormat(QPrinter::PdfFormat);
+		printer_->setPageSize(QPageSize(QPageSize::A3));
+		printer_->setPageOrientation(QPageLayout::Landscape);
+		printer_->setFullPage(true);
+		printer_->setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
 	}
 
 	auto w = new ProjectPrintWindow(project, printer_, parent);
@@ -152,7 +156,11 @@ ProjectPrintWindow::ProjectPrintWindow(QETProject *project, QPrinter *printer, Q
 	QSettings settings;
 	ui->m_component_info_cb->setChecked(settings.value("print/default/componentinfo", false).toBool());
 	ui->m_fit_in_page_cb->setChecked(settings.value("print/default/fitinpage", true).toBool());
-	ui->m_use_full_page_cb->setChecked(settings.value("print/default/fullpage", false).toBool());
+	ui->m_use_full_page_cb->setChecked(
+		m_printer->outputFormat() == QPrinter::PdfFormat
+			? true
+			: settings.value("print/default/fullpage", false).toBool());
+	m_printer->setFullPage(ui->m_use_full_page_cb->isChecked());
 
 	ui->m_date_cb->blockSignals(true);
 	ui->m_date_cb->setDate(QDate::currentDate());
@@ -596,6 +604,12 @@ void ProjectPrintWindow::loadPageSetupForCurrentPrinter()
 	if (! settings.childGroups().contains(printer_section))
 	{
 		settings.endGroup();
+		if (m_printer->outputFormat() == QPrinter::PdfFormat) {
+			m_printer->setPageSize(QPageSize(QPageSize::A3));
+			m_printer->setPageOrientation(QPageLayout::Landscape);
+			m_printer->setFullPage(true);
+			m_printer->setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
+		}
 		return;
 	}
 
@@ -656,6 +670,13 @@ void ProjectPrintWindow::loadPageSetupForCurrentPrinter()
 
 	m_printer->setFullPage(
 		settings.value("fullpage", "false").toString() == "true");
+
+	if (m_printer->outputFormat() == QPrinter::PdfFormat) {
+		m_printer->setPageSize(QPageSize(QPageSize::A3));
+		m_printer->setPageOrientation(QPageLayout::Landscape);
+		m_printer->setFullPage(true);
+		m_printer->setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
+	}
 
 	settings.endGroup();
 	settings.endGroup();

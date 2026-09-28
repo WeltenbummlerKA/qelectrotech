@@ -85,6 +85,10 @@ Next recommended task:
 ## Current Phase
 Private MAM CAE feature work on the existing fork.
 
+Current product decision:
+- The fork is being shaped into a productive MAM CAE system inspired by EPLAN/WSCAD-style workflows, not into a legacy-compatible generic QET distribution.
+- There are no existing MAM legacy projects that must preserve historical QET page defaults. Deterministic save/load behavior remains important, but deliberate MAM defaults may replace old QET defaults when they improve the CAE workflow.
+
 ## 2026-09-27 - Schematic Template Priority
 
 User priority: schematic page templates must be a first-class CAE workstream and should follow established EPLAN presentation principles. This is a visible product gap, not merely a title-block styling task.
@@ -380,7 +384,7 @@ Build a usable CAE library for relay and contactor devices, beginning with compl
 ### Phase 6 - Spaetere Persistenz/XML/Core-Migration Nur Nach Expliziter Entscheidung
 - Consider XML schema, persistence, Device/Core, ContactAssignment, PLC device model, or canonical database changes only after phases 1-4 produce stable facts and user approval.
 - Prepare a decision note before any migration: current source of truth, compatibility impact, rollback path, fixture coverage, and export/report consequences.
-- Keep legacy `.qet` compatibility and deterministic resave behavior as hard acceptance criteria.
+- Keep deterministic MAM project save/load behavior as a hard acceptance criterion. Generic legacy `.qet` compatibility is useful evidence, but not a blocker for deliberate MAM-only defaults where no old MAM projects exist.
 - No-Go: no speculative schema migration, no core rewrite hidden inside report/UI work, no migration without explicit decision and tests.
 
 ## Blocked
@@ -640,3 +644,44 @@ Visually verify coil mirrors for the rest of the Eaton contactor/relay combinati
 - Die macOS-Build-App hatte noch kein `Contents/Resources/lang`; QETs kompilierter Bundle-Pfad `../Resources/lang/` konnte dadurch den deutschen Katalog nicht finden. CMake kopiert `qet_de.qm` nach dem Linken in diesen Bundle-Pfad.
 - Verifikation: `cmake --build build/baseline --target qelectrotech -j 4` erfolgreich; die passende Translation liegt unter `build/baseline/qelectrotech.app/Contents/Resources/lang/qet_de.qm`. Finaler Offscreen-Projekt-Export mit demselben Binary ergab `/private/tmp/mam-a3-final-export.png/01_Durchlaufofen.png` (1513 × 1071); `git diff --check` sauber. Kein GUI-Test; Sprache nach vollständigem Neustart des neu gebauten Bundles visuell bestätigen.
 - Sprachänderung in `sources/qetapp.cpp`, `sources/ui/configpage/generalconfigurationpage.cpp` und `CMakeLists.txt`. In denselben beiden C++-Dateien bestehen zusätzlich ältere, separate Schriftartänderungen; diese werden bei der Commit-Auswahl nicht mitgestaged.
+- Windows-Nachtrag: `CMakeLists.txt` hängt den QET-Zielbuild jetzt explizit an `${PROJECT_NAME}_lrelease` und legt bei Nicht-macOS-Builds `qet_de.qm` unter `lang/` neben die EXE. Damit startet auch `build/windows-msvc-app/qelectrotech.exe` per Doppelklick mit verfügbarem deutschen QET-Katalog, ohne `--lang-dir` oder Installationsschritt. Verifikation im Windows-MSVC-Build: `build/windows-msvc-app/lang/qet_de.qm` vorhanden (392827 Bytes), Rebuild erfolgreich, `qelectrotech.exe --version` meldet `0.200.1-dev`, `git diff --check` sauber.
+
+### 2026-09-28 - MAM-Blattrand auf echten Seitenursprung gesetzt
+- Produktentscheidung: Es gibt keine alten MAM-Projekte, die historische QET-Seitenränder schützen müssen. Ziel ist ein produktiver MAM-CAE-Fork mit EPLAN/WSCAD-ähnlichem Arbeitsblattverhalten, daher darf die Blattgeometrie von QET-Defaults abweichen.
+- Das A3-Beispiel hatte bereits `outerbordermargin="0"`. Der verbleibende sichtbare Ursprungsoffset kam aus dem globalen `Diagram::margin = 5.0`, den `BorderTitleBlock`, Zelllineal und Exportpfade als linken/oberen Seitenursprung verwenden.
+- Geändert: `sources/diagram.cpp` setzt `Diagram::margin` auf `0.0`. Damit beginnt der Rahmen bei `0/0`; XML-Feintuning am Rahmen kann nun ohne den geerbten 5-Einheiten-Komfortrand erfolgen.
+- Verifikation in diesem Windows-Checkout: `git diff --check` sauber. Kein lokaler QET-Build ausgeführt, da hier kein eingerichtetes `build/baseline` mit Qt/CMake-Konfiguration vorhanden ist.
+
+### 2026-09-28 - Rahmenkontrolle nach Nullrand
+- Nach `Diagram::margin = 0.0` wurde die MAM-A3-Geometrie rechnerisch kontrolliert. Der Ursprung wandert von `5/5` nach `0/0`; Breite und Höhe des Rahmens selbst bleiben unverändert.
+- Aus `examples/MAM_EPLAN_A3_Klemmenplan.qet` und `MAM_EPLAN_Klemmenplan_A3` ergibt sich aktuell: Rahmenursprung `0/0`, Breite `1511.5`, Gesamthöhe `1069.599998`, Kopfstreifen `23.4`, Zeichenfeldhöhe `960.199998`, Schriftfeldhöhe `86`.
+- Codepfadprüfung: `BorderTitleBlock`, `CellRuler`, DXF/Export und Diagrammposition verwenden weiter `Diagram::margin`, laufen also konsistent auf den neuen Ursprung. Der einzige separate `5.0`-Wert im aktuellen Rahmenpfad ist der rechte Innenabstand der dynamischen Nachbarseitenzahl und kein äußerer Seitenrand.
+- Windows-Verifikation nach Qt-/MSVC-/SDK-Einrichtung: Konfiguration und Build mit Qt `6.11.2 msvc2022_64` erfolgreich, erzeugte EXE `build/windows-msvc-app/qelectrotech.exe`, Versionsprobe `0.200.1-dev`. Qt-Laufzeit wurde mit `windeployqt` neben die EXE gelegt; zusätzlich wurde die zum lokalen SQLite-Link passende `sqlite3.dll` ergänzt.
+- Frischer Windows-CLI-Export mit genau diesem Binary: `build/windows-msvc-app/qelectrotech.exe --export-png examples/MAM_EPLAN_A3_Klemmenplan.qet build/frame-check`; Ergebnis `build/frame-check/01_Durchlaufofen.png` (1513 x 1071 px). Sichtprüfung: obere linke Rahmenecke beginnt bei Bildursprung, Spaltenstreifen zeigt `0-9`, keine leere Kopfzelle vor `0`, Schriftfeld ist nicht abgeschnitten. Native GUI-Screenshot des Nutzers bestätigt ebenfalls, dass der Rahmen links/oben bündig bei `0` sitzt; die freie Fläche rechts/unten gehört zur Editor-Arbeitsfläche und ist kein Blattrand.
+- In diesem Windows-Checkout fehlt weiterhin `Rahmenvorlage.png`; ein pixelweiser Vergleich gegen die Referenz bleibt daher offen. Für den aktuellen Eingriff ist der Nullrand aber build- und exportseitig bestätigt.
+
+### 2026-09-28 - PDF-/Druckvorschau auf randlose MAM-Seite gestellt
+- Nutzerprüfung bestätigte: Sprache ist deutsch, aber in der Druck-/PDF-Vorschau sitzt der Rahmen weiterhin mit großem Papierrand auf der Seite. Dieser Rand stammt nicht aus `Diagram::margin` oder `outerbordermargin`, sondern aus dem `QPrinter`-Seitenlayout und der Einpassung in die druckbare Fläche.
+- Geändert: Für `QPrinter::PdfFormat` setzt `ProjectPrintWindow` jetzt A3 Landscape, `fullPage=true` und Seitenränder `0/0/0/0 mm`. Der Preview-Dialog zeigt die Vollseitenoption für PDF ebenfalls aktiv. Physische Drucker behalten ihre eigenen Drucker-/Hardware-Ränder.
+- Verifikation Windows: Rebuild `build/windows-msvc-app --target qelectrotech` erfolgreich; `qelectrotech.exe --version` meldet `0.200.1-dev`; CLI-PNG-Export weiterhin erfolgreich nach `build/frame-check-pdfmargin/01_Durchlaufofen.png`; `git diff --check` sauber. Native GUI-PDF-Vorschau nach Neustart durch Nutzer erneut prüfen.
+
+### 2026-09-28 - Strompfad-Kontext im Terminal/Potential-Report begonnen
+- Punkt 1 des MAM-Fahrplans begonnen: Strompfade/Potentiale werden zuerst read-only sichtbar gemacht, ohne schon eine neue persistierte Strompfad-Ownership einzuführen.
+- `--export-mam-terminal-potential` unterscheidet jetzt technische Rasterfelder (`from_grid`, `to_grid`, `grid_range`) von fachlichen Strompfadspalten (`from_path`, `to_path`, `path_range`).
+- Die sichtbare Referenz folgt der WSCAD-/EPLAN-nahen Darstellung `/Seite.Spalte` in `from_reference`, `to_reference` und `reference_range`; die Leitung/Potentialbezeichnung bleibt separat in `wire_number`.
+- Nutzerreferenzen konkretisieren die sichtbare Darstellung: am Pfeil steht gross der Potential-/Leitungsname wie `1L1`, `1N` oder `4L`, klein daneben die Gegenstelle als `Seite.Spalte`; Pfeile koennen seitlich oder nach unten zeigen, Spannungsangaben bleiben Zusatztext.
+- Der zugehörige QtTest `tst_mam_terminal_potential_export` wurde um Header- und Plausibilitätsprüfungen für Raster, Pfadspalte und Referenzfelder erweitert.
+- Verifikation Windows: App-Rebuild erfolgreich; direkter CLI-Export mit `tests/qttest/fixtures/workflow_exports_minimal.qet` erzeugt `build/mam-terminal-paths.csv` mit technischen Rastern wie `B0`/`C1`, fachlichen Pfaden wie `0`/`1` und Referenzen wie `/1.0`/`/1.1`; `qelectrotech.exe --version` meldet `0.200.1-dev`; `git diff --check` sauber. Eine separate Windows-Testkonfiguration mit `PACKAGE_TESTS=ON` scheiterte vor Testausführung an Catch2-FetchContent/Git-Erkennung in dieser Windows-CMake-Umgebung, nicht am geänderten Code.
+
+### 2026-09-28 - Zweiblättriges Strompfad-Beispiel angelegt
+- Neues Beispielprojekt `examples/MAM_Strompfade_2Seiten.qet` angelegt. Es basiert auf dem stabilen Workflow-Export-Fixture, enthält zwei Diagrammseiten `STROMPFADE SEITE 1` und `STROMPFADE SEITE 2` und unterscheidet die Leiterbereiche `W005-W011` sowie `W105-W111`.
+- Seite 2 erhielt eigene Element-UUIDs und aktualisierte Leiterreferenzen, damit das Beispiel nicht nur eine naive Kopie mit identischen Betriebsmittelidentitäten ist.
+- Verifikation Windows: `--export-mam-terminal-potential examples/MAM_Strompfade_2Seiten.qet build/mam-strompfade-2seiten.csv` exportiert 14 Leiter mit 0 Warnungen. Nach WSCAD-Korrektur zeigt der Export über beide Seiten `folio=1/2`, technische Raster wie `B0`/`C1`, fachliche Pfade wie `0`/`1` und Blatt-/Spaltenreferenzen wie `/1.0` und `/2.1`. Zusätzlich erzeugt `--export-png` zwei Seiten unter `build/mam-strompfade-2seiten-png/`.
+
+### 2026-09-28 - Sichtbarer Strompfad-Fortfuehrungsprototyp
+- Neue MAM-Pilot-Bibliothekselemente unter `elements/10_electric/10_allpole/100_folio_referencing/mam/` angelegt: horizontale Fortfuehrung rechts, horizontale Fortfuehrung links und Fortfuehrung nach unten.
+- Die Elemente nutzen editierbare Zusatzfelder `potential`, `xref` und `voltage`, damit die sichtbare Darstellung aus Potentialname, Gegenstelle und optionaler Spannung aufgebaut werden kann, ohne das QET-Sonderfeld `label` zu missbrauchen.
+- `examples/MAM_Strompfade_2Seiten.qet` enthaelt jetzt sichtbare Pfeil-Prototypen: Seite 1 zeigt `400VAC` mit `1L1` bis `1L3` nach rechts sowie `0VAC` mit `1N`/`2N` nach unten; Seite 2 zeigt passende eingehende Gegenstellen.
+- Verifikation Windows: `--check-elements` fuer die drei neuen MAM-Elemente meldet 3 OK, 0 Warnungen, 0 Fehler. `--export-png` rendert zwei Seiten nach `build/mam-strompfade-visible-png/`; Crops `crop-page1-arrows.png` und `crop-page2-arrows.png` zeigen Pfeil, grossen Potentialnamen und kleinen Gegenstellenverweis. `--export-mam-terminal-potential` bleibt bei 14 Leitern und 0 Warnungen.
+- Nutzerentscheidung: Strompfade sind fuer den ersten Stand i.O.; optischer Feinschliff erfolgt spaeter.
+- Noch bewusst offen: automatische Platzierung, echte Verknuepfung zwischen Fortfuehrungspfeilen, Renummerierung nach Seiten-/Pfadaenderungen und Feintuning von Abstaenden/Typografie im finalen MAM-Rahmen.

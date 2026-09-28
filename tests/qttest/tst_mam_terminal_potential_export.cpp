@@ -111,6 +111,15 @@ private slots:
 				QStringLiteral("wire_number"),
 				QStringLiteral("conductor_uuid"),
 				QStringLiteral("folio"),
+				QStringLiteral("from_grid"),
+				QStringLiteral("to_grid"),
+				QStringLiteral("grid_range"),
+				QStringLiteral("from_path"),
+				QStringLiteral("to_path"),
+				QStringLiteral("path_range"),
+				QStringLiteral("from_reference"),
+				QStringLiteral("to_reference"),
+				QStringLiteral("reference_range"),
 				QStringLiteral("from_element_label"),
 				QStringLiteral("from_element_uuid"),
 				QStringLiteral("from_terminal"),
@@ -139,6 +148,34 @@ private slots:
 			const QHash<QString, QString> row = rowByWireNumber(rows, wire);
 			QVERIFY2(!row.isEmpty(), qPrintable(QStringLiteral("missing row for wire '%1'").arg(wire)));
 			QCOMPARE(row.value(QStringLiteral("folio")), QStringLiteral("1"));
+			QVERIFY2(!row.value(QStringLiteral("from_grid")).isEmpty(),
+					 qPrintable(QStringLiteral("empty from grid for wire '%1'").arg(wire)));
+			QVERIFY2(!row.value(QStringLiteral("to_grid")).isEmpty(),
+					 qPrintable(QStringLiteral("empty to grid for wire '%1'").arg(wire)));
+			QVERIFY2(row.value(QStringLiteral("from_grid")) != QStringLiteral("-"),
+					 qPrintable(QStringLiteral("out-of-bounds from grid for wire '%1'").arg(wire)));
+			QVERIFY2(row.value(QStringLiteral("to_grid")) != QStringLiteral("-"),
+					 qPrintable(QStringLiteral("out-of-bounds to grid for wire '%1'").arg(wire)));
+			QVERIFY2(!row.value(QStringLiteral("from_path")).isEmpty(),
+					 qPrintable(QStringLiteral("empty from path for wire '%1'").arg(wire)));
+			QVERIFY2(!row.value(QStringLiteral("to_path")).isEmpty(),
+					 qPrintable(QStringLiteral("empty to path for wire '%1'").arg(wire)));
+			QCOMPARE(
+				row.value(QStringLiteral("path_range")),
+				row.value(QStringLiteral("from_path")) == row.value(QStringLiteral("to_path"))
+					? row.value(QStringLiteral("from_path"))
+					: row.value(QStringLiteral("from_path")) % QStringLiteral(" -> ")
+						% row.value(QStringLiteral("to_path")));
+			QCOMPARE(row.value(QStringLiteral("from_reference")),
+					 QStringLiteral("/1.") % row.value(QStringLiteral("from_path")));
+			QCOMPARE(row.value(QStringLiteral("to_reference")),
+					 QStringLiteral("/1.") % row.value(QStringLiteral("to_path")));
+			QCOMPARE(
+				row.value(QStringLiteral("reference_range")),
+				row.value(QStringLiteral("from_reference")) == row.value(QStringLiteral("to_reference"))
+					? row.value(QStringLiteral("from_reference"))
+					: row.value(QStringLiteral("from_reference")) % QStringLiteral(" -> ")
+						% row.value(QStringLiteral("to_reference")));
 			QVERIFY2(!row.value(QStringLiteral("conductor_uuid")).isEmpty(),
 					 qPrintable(QStringLiteral("empty conductor uuid for wire '%1'").arg(wire)));
 			QVERIFY2(!row.value(QStringLiteral("from_element_uuid")).isEmpty(),

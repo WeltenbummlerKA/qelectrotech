@@ -145,6 +145,9 @@ Pflichtfelder und IDs fuer den ersten Slice:
 - `wire_number`: sichtbarer Leitertext bzw. Potential-Leiternummer, leer erlaubt.
 - `conductor_uuid`: bestehende Leiter-UUID ohne geschweifte Klammern.
 - `folio`: QET-Folioindex des Leiters.
+- `from_grid`, `to_grid`, `grid_range`: technische QET-Rasterfelder der Leiterendpunkte, aus der vorhandenen Rahmenkoordinate.
+- `from_path`, `to_path`, `path_range`: fachliche Strompfad-/Spaltennummern der Leiterendpunkte, abgeleitet aus dem numerischen Teil des Rasterfelds.
+- `from_reference`, `to_reference`, `reference_range`: WSCAD-/EPLAN-nahe Blatt-/Strompfadreferenz im Format `/Seite.Spalte`, z. B. `/2.4`.
 - `from_element_label`, `from_element_uuid`, `from_terminal`: erster Leiterendpunkt.
 - `to_element_label`, `to_element_uuid`, `to_terminal`: zweiter Leiterendpunkt.
 - `potential_wire_number`: kleinster/nutzbarer nichtleerer Leitertext der Potentialgruppe, analog Netzexport.
@@ -173,14 +176,46 @@ Der erste kleine Slice ist `mam-terminal-potential` als CLI/CSV-Export ueber die
 Minimalfelder:
 
 - `wire_number`, `conductor_uuid`, `folio`
+- `from_grid`, `to_grid`, `grid_range`
+- `from_path`, `to_path`, `path_range`
+- `from_reference`, `to_reference`, `reference_range`
 - `from_element_label`, `from_element_uuid`, `from_terminal`
 - `to_element_label`, `to_element_uuid`, `to_terminal`
 - `potential_wire_number`, `potential_conductor_count`, `potential_terminal_count`
 - `status`, `warnings`
 
+## Implementierter Strompfad-Kontext-Slice
+
+Der erste Strompfad-Schritt erweitert `mam-terminal-potential` read-only um technische Rasterfelder, fachliche Strompfadspalten und sichtbare Blatt-/Spaltenreferenzen.
+
+Quelle:
+
+- Die technischen Rasterwerte `from_grid`/`to_grid` kommen aus der bestehenden Rahmen-/Rasterumrechnung `Diagram::convertPosition()` am jeweiligen Terminal-Andockpunkt.
+- Die fachlichen Strompfade `from_path`/`to_path` sind die numerischen Spaltenanteile dieser Rasterwerte.
+- Die sichtbaren Verweise `from_reference`/`to_reference` verbinden Folio und Strompfad als `/Seite.Spalte`.
+- Die jeweiligen `*_range`-Felder zeigen einen Einzelwert, wenn beide Endpunkte gleich sind, sonst `from -> to`.
+
+Bewusst noch nicht enthalten:
+
+- keine eigene persistierte Strompfadnummer;
+- keine automatische Pfadfortschreibung beim Einfügen/Verschieben von Seiten;
+- keine UI für Pfaddefinitionen;
+- keine Kopplung an Kontaktspiegel oder Potentialverweise außerhalb des bestehenden Reports.
+
 Nicht in diesem Slice:
 
 - Terminal-strip facts, bridge semantics, cable/core ownership, UI, persistence, XML schema, runtime/package work.
+
+## Sichtbare Strompfad-Darstellung
+
+Die vom Nutzer gelieferten WSCAD-Referenzen definieren die Zielrichtung fuer die spaetere sichtbare Planlogik:
+
+- Die grosse Beschriftung am Pfeil ist die Leitung bzw. das Potential, z. B. `1L1`, `1N` oder `4L`.
+- Die kleine Referenz daneben ist die Gegenstelle als `Seite.Spalte`, z. B. `1.9`, `2.1` oder `24.1`.
+- Pfeile duerfen seitlich in eine andere Planstelle oder nach unten in den naechsten Strompfad zeigen.
+- Spannungsangaben wie `400VAC`, `230VAC` oder `0VAC` sind eigene sichtbare Zusatzinformationen, nicht die Strompfadnummer.
+- Die Pilot-Elemente verwenden fuer die sichtbare Beschriftung die editierbaren Felder `potential`, `xref` und `voltage`. Das QET-Sonderfeld `label` bleibt frei fuer die normale Betriebsmittel-/Elementlogik.
+- Die Datenfelder `wire_number` und `from_reference`/`to_reference` liefern dafuer die erste read-only Grundlage, ersetzen aber noch keine automatische grafische Pfeil-/Fortfuehrungslogik.
 
 ## Naechster implementierbarer Slice
 

@@ -25,6 +25,7 @@
 #include "dataBase/projectdatabase.h"
 #include "diagram.h"
 #include "diagramcontext.h"
+#include "diagramposition.h"
 #include "pdf_links.h"
 #include "plcioprojectionservice.h"
 #include "qetgraphicsitem/conductor.h"
@@ -568,6 +569,44 @@ QString terminalName(Terminal *terminal)
 	return terminal ? terminal->name() : QString();
 }
 
+QString terminalPath(Terminal *terminal)
+{
+	if (!terminal)
+		return QString();
+
+	Diagram *diagram = terminal->diagram();
+	if (!diagram)
+		return QString();
+
+	DiagramPosition position = diagram->convertPosition(terminal->dockConductor());
+	return position.toString();
+}
+
+QString gridColumn(const QString &grid)
+{
+	static const QRegularExpression column_re(QStringLiteral("(\\d+)$"));
+	const QRegularExpressionMatch match = column_re.match(grid);
+	return match.hasMatch() ? match.captured(1) : QString();
+}
+
+QString pathReference(int folio, const QString &path)
+{
+	if (path.isEmpty())
+		return QString();
+	return QStringLiteral("/%1.%2").arg(folio).arg(path);
+}
+
+QString compactRange(const QString &from_value, const QString &to_value)
+{
+	if (from_value.isEmpty() && to_value.isEmpty())
+		return QString();
+	if (from_value.isEmpty())
+		return to_value;
+	if (to_value.isEmpty() || from_value == to_value)
+		return from_value;
+	return from_value % QStringLiteral(" -> ") % to_value;
+}
+
 Element *terminalElement(Terminal *terminal)
 {
 	return terminal ? terminal->parentElement() : nullptr;
@@ -732,6 +771,9 @@ int exportMamTerminalPotential(QETProject &project, const QString &output)
 
 	static const QStringList columns {
 		"wire_number", "conductor_uuid", "folio",
+		"from_grid", "to_grid", "grid_range",
+		"from_path", "to_path", "path_range",
+		"from_reference", "to_reference", "reference_range",
 		"from_element_label", "from_element_uuid", "from_terminal",
 		"to_element_label", "to_element_uuid", "to_terminal",
 		"potential_wire_number", "potential_conductor_count",
@@ -766,6 +808,13 @@ int exportMamTerminalPotential(QETProject &project, const QString &output)
 
 		Element *from_element = terminalElement(conductor->terminal1);
 		Element *to_element = terminalElement(conductor->terminal2);
+		const int folio = folios.value(conductor->diagram(), 0);
+		const QString from_grid = terminalPath(conductor->terminal1);
+		const QString to_grid = terminalPath(conductor->terminal2);
+		const QString from_path = gridColumn(from_grid);
+		const QString to_path = gridColumn(to_grid);
+		const QString from_reference = pathReference(folio, from_path);
+		const QString to_reference = pathReference(folio, to_path);
 		QStringList row_warnings;
 		if (conductor->uuid().isNull())
 			row_warnings << QStringLiteral("empty conductor_uuid");
@@ -787,7 +836,16 @@ int exportMamTerminalPotential(QETProject &project, const QString &output)
 		const QStringList values {
 			conductor->properties().text,
 			uuidString(conductor->uuid()),
-			QString::number(folios.value(conductor->diagram(), 0)),
+			QString::number(folio),
+			from_grid,
+			to_grid,
+			compactRange(from_grid, to_grid),
+			from_path,
+			to_path,
+			compactRange(from_path, to_path),
+			from_reference,
+			to_reference,
+			compactRange(from_reference, to_reference),
 			from_element ? elementLabel(from_element) : QString(),
 			from_element ? uuidString(from_element->uuid()) : QString(),
 			terminalName(conductor->terminal1),

@@ -257,6 +257,10 @@ else()
     )
 endif()
 
+if(TARGET ${PROJECT_NAME}_lrelease)
+    add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lrelease)
+endif()
+
 if(APPLE)
     # Development builds run from the app bundle as well as from the install
     # tree. Keep the forced MAM German catalog where QET_LANG_PATH resolves
@@ -268,6 +272,19 @@ if(APPLE)
             "${CMAKE_BINARY_DIR}/lang/qet_de.qm"
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/lang/qet_de.qm"
         COMMENT "Staging the German QElectroTech translation in the app bundle"
+        VERBATIM
+    )
+else()
+    # The MAM build pins the application language to German. Make developer
+    # builds runnable by double-clicking the binary, without a separate
+    # install step or --lang-dir argument.
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/lang"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_BINARY_DIR}/lang/qet_de.qm"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/lang/qet_de.qm"
+        COMMENT "Staging the German QElectroTech translation next to the executable"
         VERBATIM
     )
 endif()

@@ -147,7 +147,7 @@ int Diagram::xKeyGrid = 10;
 int Diagram::yKeyGrid = 10;
 int Diagram::xKeyGridFine = 1;
 int Diagram::yKeyGridFine = 1;
-const qreal Diagram::margin = 5.0;
+const qreal Diagram::margin = 0.0;
 
 /**
 	@brief Diagram::background_color

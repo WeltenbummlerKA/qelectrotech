@@ -3,6 +3,11 @@
 ## Project Vision
 Build a professional, data-driven electrical CAE system using QElectroTech as the technical starting point, now privately/MAM-internally in the fork rather than as the current upstream contribution path.
 
+Current product direction:
+- The MAM fork is allowed to depart from historical QET defaults when that is needed to become a productive CAE system comparable in working principles to EPLAN, WSCAD, and similar tools.
+- There are no legacy MAM projects that must constrain the first CAE workflow. Compatibility remains useful as engineering evidence, but it is no longer a hard blocker against deliberate MAM defaults.
+- For the schematic sheet, the CAE sheet/frame owns the visible page geometry. The MAM A3 frame should start at the sheet origin, with no inherited QET comfort margin around the page.
+
 ## Private MAM Fork Leitplanken
 
 Zielbild:
@@ -14,7 +19,7 @@ Architecture principles:
 - Projection before ownership: derive Contact/CrossRef, PLC IO, terminal/potential, and report facts from existing project state before changing authority.
 - Read-only first: warnings, reports, and validation views come before writes, repairs, schema changes, or UI commands.
 - Narrow slices: each slice has one domain purpose, one verification surface, and no unrelated runtime/package work.
-- Compatibility first: existing `.qet` XML, deterministic resave behavior, legacy files, and current QET workflows must remain protected.
+- MAM workflow first: preserve deterministic behavior and avoid accidental data loss, but do not keep historical QET defaults when they block the intended MAM CAE workflow.
 - Separation: runtime packaging, GUI smoke, signing, and installation are their own track and must not be mixed with PLC/CAE Fachlogik.
 
 Next concrete slices:
@@ -1205,3 +1210,17 @@ Target platforms from project documentation: Windows, GNU/Linux, macOS, and BSDs
 - `QETApp::langFromSetting()` erzwingt jetzt `de`. Die Spracheinstellung in der UI zeigt deaktiviert Deutsch; Speichern anderer Einstellungen ändert die gemeinsam genutzte QET-Präferenz nicht. `lang/qet_de.ts` hat 3.025 nichtleere Übersetzungen von 3.026 Einträgen.
 - Das lokale macOS-Bundle enthielt keine `Contents/Resources/lang`, obwohl der kompilierte QET-Pfad dorthin zeigt. CMake staged `qet_de.qm` nun nach `Contents/Resources/lang` nach dem Linken.
 - `cmake --build build/baseline --target qelectrotech -j 4` erfolgreich; Bundle enthält die deutsche `.qm`. Offscreen-Export `/private/tmp/mam-a3-final-export.png/01_Durchlaufofen.png` (1513 × 1071), Diff-Prüfung sauber. Export prüft nicht die sichtbare GUI-Sprache; nach Neustart des frisch gebauten Bundles ist Menüprüfung erforderlich. Quelle: `qetapp.cpp`, `generalconfigurationpage.cpp`, CMake.
+
+### 2026-09-28 - MAM-Blattursprung ohne QET-Komfortrand
+- Nutzerentscheidung: Keine alten MAM-Projekte müssen historische QET-Seitenränder erhalten. Der Fork soll zu einem produktiven CAE-System nach EPLAN/WSCAD-Arbeitsprinzipien werden; MAM-CAE-Defaults dürfen QET-Defaults ersetzen.
+- `outerbordermargin` des MAM-A3-Beispiels war bereits `0`; der verbliebene Abstand kam aus dem globalen `Diagram::margin`.
+- `Diagram::margin` ist nun `0.0`, damit Rahmen, Zelllineal und Exportpfade den Blatt-/Rahmenursprung bei `0/0` verwenden. Das ist eine bewusste MAM-Produktentscheidung, nicht nur ein kosmetisches Rahmen-Feintuning.
+
+### 2026-09-28 - Erster Strompfad-Kontext ohne neues Ownership-Modell
+- Punkt 1 nach Rahmenabnahme beginnt bewusst read-only: `--export-mam-terminal-potential` unterscheidet jetzt technische Rasterfelder (`from_grid`, `to_grid`, `grid_range`) von fachlichen Strompfadspalten (`from_path`, `to_path`, `path_range`).
+- Die sichtbare WSCAD-/EPLAN-nahe Referenz steht als `from_reference`, `to_reference` und `reference_range` im Format `/Seite.Spalte`; die Leitung/Potentialbezeichnung bleibt `wire_number`.
+- Nutzerbeispiele vom 2026-09-28 zeigen die gewuenschte Plan-Darstellung: Pfeilfortfuehrung mit grossem Potential-/Leitungsnamen (`1L1`, `1N`, `4L`), kleinem Gegenstellenverweis (`1.9`, `2.1`, `24.1`) und optionaler Spannungsangabe (`400VAC`, `230VAC`, `0VAC`). Pfeile koennen seitlich oder nach unten zeigen.
+- Erster sichtbarer Prototyp ist angelegt: `mam_potential_next_h`, `mam_potential_previous_h` und `mam_potential_next_down` als Pilot-Elemente mit den Feldern `potential`, `xref` und `voltage`; `examples/MAM_Strompfade_2Seiten.qet` nutzt sie auf zwei Seiten.
+- Nutzerabnahme fuer den ersten Strompfad-Stand: i.O. fuer jetzt; weiterer optischer Feinschliff wird spaeter separat erledigt.
+- Dieser Slice macht Pfad/Potential-Kontext prüfbar, ohne schon eine eigene persistierte Strompfadnummer, Seiten-/Struktur-Renummerierung, UI-Definition, XML-Schema oder Kopplung an Kontaktspiegel zu behaupten.
+- Nächste Architekturentscheidung bleibt offen: ob echte Strompfadnummern seitenweise, projektweit oder strukturbezogen geführt werden und wie sie bei eingefügten/verschobenen Seiten stabil nachgeführt werden.
