@@ -46,12 +46,16 @@ class BorderProperties {
 		int columns_count;            ///< Columns count
 		qreal columns_width;          ///< Columns width
 		qreal columns_header_height;  ///< Column headers height
+		qreal bottom_columns_header_height; ///< Optional repeated column strip below drawing rows
 		qreal heading_height;         ///< Height of the page heading below the column labels
 		bool display_columns;         ///< Whether to display column headers
+		bool columns_start_at_zero;   ///< Whether the first column header is numbered 0
 	
 		int rows_count;               ///< Rows count
 		qreal rows_height;            ///< Rows height
 		qreal rows_header_width;      ///< Row headers width
 		bool display_rows;            ///< Whether to display row headers
+		bool row_headers_both_sides;  ///< Repeat row letters on right side of the sheet
+		qreal outer_border_margin;    ///< Optional outer frame line around the drawing and title block
 };
 #endif

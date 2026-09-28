@@ -1701,7 +1701,8 @@ void TitleBlockTemplate::renderDxf(QRectF &title_block_rect,
 			y = yCoord + recHeight - h - y*Createdxf::yScale;
 			w *= Createdxf::xScale;
 
-			Createdxf::drawRectangle(file_path, x, y, w, h, color);
+			if (cells_[i][j]->draw_border)
+				Createdxf::drawRectangle(file_path, x, y, w, h, color);
 			if (cells_[i][j] -> type() == TitleBlockCell::TextCell)
 			{
 				QString final_text =
@@ -1744,7 +1745,7 @@ void TitleBlockTemplate::renderCell(QPainter &painter,
 		    ? QColor(Qt::white) : QColor(Qt::black);
 	pen.setColor(ink);
 	painter.setPen(pen);
-	painter.drawRect(cell_rect);
+	if (cell.draw_border) painter.drawRect(cell_rect);
 
 	painter.save();
 	// render the inner content of the current cell
@@ -1773,7 +1774,7 @@ void TitleBlockTemplate::renderCell(QPainter &painter,
 
 	// draw again the border rect of the current cell, without the brush this time
 	painter.setBrush(Qt::NoBrush);
-	painter.drawRect(cell_rect);
+	if (cell.draw_border) painter.drawRect(cell_rect);
 }
 
 
@@ -2224,4 +2225,3 @@ int TitleBlockTemplate::lengthRange(
 	}
 	return(length);
 }
-

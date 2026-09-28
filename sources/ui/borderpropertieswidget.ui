@@ -99,6 +99,12 @@
       <item row="3" column="2"><widget class="QDoubleSpinBox" name="m_heading_height_sp"><property name="suffix"><string> px</string></property><property name="maximum"><double>100.000000000000000</double></property><property name="decimals"><number>1</number></property></widget></item>
       <item row="4" column="0"><widget class="QLabel" name="row_header_width_label"><property name="text"><string>Largeur en-tête lignes :</string></property></widget></item>
       <item row="4" column="2"><widget class="QDoubleSpinBox" name="m_row_header_width_sp"><property name="suffix"><string> px</string></property><property name="maximum"><double>100.000000000000000</double></property><property name="decimals"><number>1</number></property></widget></item>
+      <item row="5" column="0"><widget class="QLabel" name="bottom_column_header_height_label"><property name="text"><string>Hauteur unterer Spaltenstreifen:</string></property></widget></item>
+      <item row="5" column="2"><widget class="QDoubleSpinBox" name="m_bottom_column_header_height_sp"><property name="suffix"><string> px</string></property><property name="maximum"><double>50.000000000000000</double></property><property name="decimals"><number>1</number></property></widget></item>
+      <item row="6" column="0" colspan="3"><widget class="QCheckBox" name="m_row_headers_both_sides_cb"><property name="text"><string>Zeilenkennzeichen links und rechts anzeigen</string></property></widget></item>
+      <item row="7" column="0" colspan="3"><widget class="QCheckBox" name="m_columns_start_at_zero_cb"><property name="text"><string>Spalten bei 0 beginnen</string></property></widget></item>
+      <item row="8" column="0"><widget class="QLabel" name="outer_border_margin_label"><property name="text"><string>Abstand Außenrahmen:</string></property></widget></item>
+      <item row="8" column="2"><widget class="QDoubleSpinBox" name="m_outer_border_margin_sp"><property name="suffix"><string> px</string></property><property name="maximum"><double>50.000000000000000</double></property><property name="decimals"><number>1</number></property></widget></item>
      </layout>
     </widget>
    </item>
@@ -114,6 +120,9 @@
   <tabstop>m_row_header_width_sp</tabstop>
   <tabstop>m_display_columns_cb</tabstop>
   <tabstop>m_display_rows_cb</tabstop>
+  <tabstop>m_row_headers_both_sides_cb</tabstop>
+  <tabstop>m_columns_start_at_zero_cb</tabstop>
+  <tabstop>m_outer_border_margin_sp</tabstop>
  </tabstops>
  <resources/>
  <connections/>

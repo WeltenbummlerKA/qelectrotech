@@ -316,15 +316,9 @@ QString QETApp::langFromSetting()
 {
 	if (!lang_is_set)
 	{
-		QSettings settings;
-		system_language = settings.value("lang", "system").toString();
-		if ((system_language == "system") || (system_language == QString())) {
-			// Keep the full locale (e.g. "pt_BR"), not just the base language
-			// ("pt"): QET ships regional translations (pt_BR, nl_BE, nl_NL) and
-			// truncating here loaded the wrong one. setLanguage() falls back to
-			// the base language when no regional translation exists.
-			system_language = QLocale::system().name();
-		}
+		// The MAM build has a fixed German interface, independent of macOS
+		// locale and the shared QET user preference.
+		system_language = QStringLiteral("de");
 		lang_is_set = true;
 	}
 

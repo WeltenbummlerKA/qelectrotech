@@ -56,10 +56,14 @@ BorderTitleBlock::BorderTitleBlock(QObject *parent) :
 	columns_count_(17),
 	columns_width_(60.0),
 	columns_header_height_(20.0),
+	bottom_columns_header_height_(0.0),
 	heading_height_(0.0),
+	columns_start_at_zero_(QSettings().value("border-columns_0", true).toBool()),
 	rows_count_(8),
 	rows_height_(80.0),
 	rows_header_width_(20.0),
+	row_headers_both_sides_(false),
+	outer_border_margin_(0.0),
 	display_columns_(true),
 	display_rows_(true),
 	display_titleblock_(true),
@@ -150,7 +154,11 @@ QRectF BorderTitleBlock::titleBlockRectForQPainter() const
 */
 QRectF BorderTitleBlock::borderAndTitleBlockRect() const
 {
-	return diagram_rect_ | titleBlockRect();
+	QRectF frame = diagram_rect_ | titleBlockRect() | bottomColumnsRect();
+	if (outer_border_margin_ > 0.0)
+		frame.adjust(-outer_border_margin_, -outer_border_margin_,
+			     outer_border_margin_, outer_border_margin_);
+	return frame;
 }
 
 /**
@@ -161,10 +169,23 @@ QRectF BorderTitleBlock::borderAndTitleBlockRect() const
 QRectF BorderTitleBlock::columnsRect() const
 {
 	if (!display_columns_) return QRectF();
+	const qreal left_header = display_rows_ ? rows_header_width_ : 0.0;
+	const qreal right_header = display_rows_ && row_headers_both_sides_
+			? rows_header_width_ : 0.0;
 	return QRectF (Diagram::margin,
 		       Diagram::margin,
-		       (columns_count_*columns_width_) + rows_header_width_,
+		       columns_count_ * columns_width_ + left_header + right_header,
 		       columns_header_height_);
+}
+
+QRectF BorderTitleBlock::bottomColumnsRect() const
+{
+	if (!display_columns_ || bottom_columns_header_height_ <= 0.0) return QRectF();
+	return QRectF(Diagram::margin + (display_rows_ ? rows_header_width_ : 0.0),
+		      Diagram::margin + columns_header_height_ + heading_height_
+			      + rows_count_ * rows_height_
+			      + m_titleblock_template_renderer->height(),
+		      columns_count_ * columns_width_, bottom_columns_header_height_);
 }
 
 /**
@@ -188,10 +209,12 @@ QRectF BorderTitleBlock::rowsRect() const
 */
 QRectF BorderTitleBlock::outsideBorderRect() const
 {
+	const qreal row_headers_width = display_rows_ ? rows_header_width_
+			* (row_headers_both_sides_ ? 2 : 1) : 0.0;
 	return QRectF (Diagram::margin,
 		       Diagram::margin,
-		       (columns_width_*columns_count_) + rows_header_width_,
-		       (rows_height_*rows_count_) + columns_header_height_ + heading_height_);
+	       columns_width_ * columns_count_ + row_headers_width,
+		       (rows_height_*rows_count_) + columns_header_height_ + heading_height_ + bottom_columns_header_height_);
 }
 
 /**
@@ -207,7 +230,7 @@ QRectF BorderTitleBlock::insideBorderRect() const
 	qreal width  = columns_width_*columns_count_;
 	qreal height = rows_height_*rows_count_;
 
-	display_rows_ ? left += rows_header_width_ : width += rows_header_width_;
+	if (display_rows_) left += rows_header_width_;
 	top += columns_header_height_ + heading_height_;
 	if (!display_columns_) height += columns_header_height_;
 
@@ -243,13 +266,17 @@ void BorderTitleBlock::borderToXml(QDomElement &xml_elmt) {
 	xml_elmt.setAttribute("cols",        columnsCount());
 	xml_elmt.setAttribute("colsize",     QString("%1").arg(columnsWidth()));
 	xml_elmt.setAttribute("colheaderheight", QString::number(columnsHeaderHeight()));
+	xml_elmt.setAttribute("bottomcolheaderheight", QString::number(bottomColumnsHeaderHeight()));
 	xml_elmt.setAttribute("headingheight", QString::number(headingHeight()));
 	xml_elmt.setAttribute("displaycols", columnsAreDisplayed() ? "true" : "false");
+	xml_elmt.setAttribute("columnstartatzero", columnsStartAtZero() ? "true" : "false");
 
 	xml_elmt.setAttribute("rows",        rowsCount());
 	xml_elmt.setAttribute("rowsize",     QString("%1").arg(rowsHeight()));
 	xml_elmt.setAttribute("rowheaderwidth", QString::number(rowsHeaderWidth()));
 	xml_elmt.setAttribute("displayrows", rowsAreDisplayed() ? "true" : "false");
+	xml_elmt.setAttribute("rowheadersbothsides", rowHeadersOnBothSides() ? "true" : "false");
+	xml_elmt.setAttribute("outerbordermargin", QString::number(outerBorderMargin()));
 
 	// attribut datant de la version 0.1 - laisse pour retrocompatibilite
 	xml_elmt.setAttribute("height", QString("%1").arg(diagramHeight()));
@@ -273,6 +300,12 @@ void BorderTitleBlock::borderFromXml(const QDomElement &xml_elmt) {
 		double value = xml_elmt.attribute("colheaderheight").toDouble(&ok);
 		if (ok) setColumnsHeaderHeight(value);
 	}
+	if (xml_elmt.hasAttribute("columnstartatzero"))
+		columns_start_at_zero_ = xml_elmt.attribute("columnstartatzero") == "true";
+	if (xml_elmt.hasAttribute("bottomcolheaderheight")) {
+		double value = xml_elmt.attribute("bottomcolheaderheight").toDouble(&ok);
+		if (ok) setBottomColumnsHeaderHeight(value);
+	}
 	if (xml_elmt.hasAttribute("headingheight")) {
 		double value = xml_elmt.attribute("headingheight").toDouble(&ok);
 		if (ok) setHeadingHeight(value);
@@ -280,6 +313,11 @@ void BorderTitleBlock::borderFromXml(const QDomElement &xml_elmt) {
 	if (xml_elmt.hasAttribute("rowheaderwidth")) {
 		double value = xml_elmt.attribute("rowheaderwidth").toDouble(&ok);
 		if (ok) setRowsHeaderWidth(value);
+	}
+	setRowHeadersOnBothSides(xml_elmt.attribute("rowheadersbothsides") == "true");
+	if (xml_elmt.hasAttribute("outerbordermargin")) {
+		double value = xml_elmt.attribute("outerbordermargin").toDouble(&ok);
+		if (ok) setOuterBorderMargin(value);
 	}
 
 	// backward compatibility:
@@ -375,12 +413,16 @@ BorderProperties BorderTitleBlock::exportBorder()
 	bp.columns_count = columnsCount();
 	bp.columns_width = columnsWidth();
 	bp.columns_header_height = columnsHeaderHeight();
+	bp.bottom_columns_header_height = bottomColumnsHeaderHeight();
 	bp.heading_height = headingHeight();
 	bp.display_columns = columnsAreDisplayed();
+	bp.columns_start_at_zero = columnsStartAtZero();
 	bp.rows_count = rowsCount();
 	bp.rows_height = rowsHeight();
 	bp.rows_header_width = rowsHeaderWidth();
 	bp.display_rows = rowsAreDisplayed();
+	bp.row_headers_both_sides = rowHeadersOnBothSides();
+	bp.outer_border_margin = outerBorderMargin();
 	return(bp);
 }
 
@@ -391,11 +433,15 @@ BorderProperties BorderTitleBlock::exportBorder()
 */
 void BorderTitleBlock::importBorder(const BorderProperties &bp) {
 	setColumnsHeaderHeight(bp.columns_header_height);
+	setBottomColumnsHeaderHeight(bp.bottom_columns_header_height);
 	setHeadingHeight(bp.heading_height);
 	setColumnsCount(bp.columns_count);
 	setColumnsWidth(bp.columns_width);
 	displayColumns(bp.display_columns);
+	columns_start_at_zero_ = bp.columns_start_at_zero;
 	setRowsHeaderWidth(bp.rows_header_width);
+	setRowHeadersOnBothSides(bp.row_headers_both_sides);
+	setOuterBorderMargin(bp.outer_border_margin);
 	setRowsCount(bp.rows_count);
 	setRowsHeight(bp.rows_height);
 	displayRows(bp.display_rows);
@@ -545,15 +591,13 @@ void BorderTitleBlock::draw(QPainter *painter)
 	painter -> setPen(pen);
 	painter -> setBrush(Qt::NoBrush);
 
-	QSettings settings;
-
 	//Draw the borer
 	if (display_border_) painter -> drawRect(diagram_rect_);
 
 	painter -> setFont(QETApp::diagramTextsFont());
 
 	//Draw the empty case at the top left of diagram when there is header
-	if (display_border_ && (display_columns_ || display_rows_))
+	if (display_border_ && display_rows_)
 	{
 		QRectF first_rectangle(
 			diagram_rect_.topLeft().x(),
@@ -564,15 +608,14 @@ void BorderTitleBlock::draw(QPainter *painter)
 		painter -> drawRect(first_rectangle);
 	}
 
+		const bool columns_start_at_zero = columns_start_at_zero_;
 		//Draw the nums of columns
 	if (display_border_ && display_columns_) {
-		const bool columns_start_at_zero =
-				settings.value("border-columns_0", true).toBool();
-		for (int i = 1 ; i <= columns_count_ ; ++ i) {
+	for (int i = 1 ; i <= columns_count_ ; ++ i) {
 			QRectF numbered_rectangle = QRectF(
 				diagram_rect_.topLeft().x()
-					+ (rows_header_width_
-					   + ((i - 1) * columns_width_)),
+					+ (display_rows_ ? rows_header_width_ : 0.0)
+					+ ((i - 1) * columns_width_),
 				diagram_rect_.topLeft().y(),
 				columns_width_,
 				columns_header_height_
@@ -582,6 +625,13 @@ void BorderTitleBlock::draw(QPainter *painter)
 					    Qt::AlignVCenter
 					    | Qt::AlignCenter,
 					    BorderCellLabels::columnLabel(i, columns_start_at_zero));
+		}
+		if (display_rows_ && row_headers_both_sides_) {
+			QRectF right_corner(diagram_rect_.left() + rows_header_width_
+					    + columns_count_ * columns_width_,
+					    diagram_rect_.top(), rows_header_width_,
+					    columns_header_height_);
+			painter->drawRect(right_corner);
 		}
 	}
 
@@ -619,6 +669,18 @@ void BorderTitleBlock::draw(QPainter *painter)
 					    | Qt::AlignCenter,
 					    BorderCellLabels::rowLabel(i));
 		}
+		if (row_headers_both_sides_) {
+			for (int i = 1; i <= rows_count_; ++i) {
+				QRectF rectangle(diagram_rect_.left() + rows_header_width_
+						 + columns_count_ * columns_width_,
+					 diagram_rect_.top() + columns_header_height_
+						 + heading_height_ + (i - 1) * rows_height_,
+					 rows_header_width_, rows_height_);
+				painter->drawRect(rectangle);
+				painter->drawText(rectangle, Qt::AlignVCenter | Qt::AlignCenter,
+						  BorderCellLabels::rowLabel(i));
+			}
+		}
 	}
 
 		// render the titleblock, using the TitleBlockTemplate object
@@ -643,6 +705,61 @@ void BorderTitleBlock::draw(QPainter *painter)
 			painter -> translate(-tbt_rect.topLeft());
 		}
 	}
+	if (display_border_ && display_titleblock_
+			&& m_titleblock_template_renderer->titleBlockTemplate()
+			&& m_titleblock_template_renderer->titleBlockTemplate()
+				->information().contains("page-references=above-titleblock")) {
+			QFont reference_font = QETApp::diagramTextsFont();
+			reference_font.setPointSizeF(7.0);
+			painter->setFont(reference_font);
+			const qreal reference_y = diagram_rect_.bottom() - 10.0;
+			const qreal reference_height = 9.0;
+			const qreal reference_width = 20.0;
+			const QRectF previous_rect(
+				diagram_rect_.left() + rows_header_width_,
+				reference_y, reference_width, reference_height);
+			const QRectF next_rect(
+				diagram_rect_.right() - 5.0 - reference_width,
+				reference_y, reference_width, reference_height);
+			painter->drawText(previous_rect,
+					  Qt::AlignLeft | Qt::AlignBottom,
+					  m_previous_folio_num);
+			painter->drawText(next_rect,
+					  Qt::AlignRight | Qt::AlignBottom,
+					  m_next_folio_num);
+			painter->setFont(QETApp::diagramTextsFont());
+		}
+	// Lower zone labels sit below the title block at the sheet edge.
+	if (display_border_ && display_columns_ && bottom_columns_header_height_ > 0.0) {
+		const QRectF zones = bottomColumnsRect();
+		painter->drawRect(zones);
+		for (int i = 1; i <= columns_count_; ++i) {
+			QRectF cell(zones.left() + (i - 1) * columns_width_, zones.top(),
+					columns_width_, zones.height());
+			painter->drawText(cell, Qt::AlignVCenter | Qt::AlignCenter,
+						  BorderCellLabels::columnLabel(i, columns_start_at_zero));
+		}
+		// The source frame uses short registration ticks between the zone
+		// numbers rather than full-height divider lines.
+		const qreal tick_height = zones.height() * 0.35;
+		for (int i = 1; i < columns_count_; ++i) {
+			const qreal x = zones.left() + i * columns_width_;
+			painter->drawLine(QPointF(x, zones.top()), QPointF(x, zones.top() + tick_height));
+		}
+	}
+
+	if (display_border_ && outer_border_margin_ > 0.0) {
+		const QRectF outer = borderAndTitleBlockRect();
+		const QRectF inner = diagram_rect_ | titleBlockRect() | bottomColumnsRect();
+		painter->drawRect(outer);
+		// The reference frame uses clipped paper corners. Keep the diagonals
+		// tied to the actual drawing/title-block corners so they remain correct
+		// when the sheet dimensions or title-block height change.
+		painter->drawLine(outer.topLeft(), inner.topLeft());
+		painter->drawLine(outer.topRight(), inner.topRight());
+		painter->drawLine(outer.bottomLeft(), inner.bottomLeft());
+		painter->drawLine(outer.bottomRight(), inner.bottomRight());
+	}
 
 	painter -> restore();
 }
@@ -656,8 +773,12 @@ void BorderTitleBlock::drawDxf(
 		QString &file_path,
 		int color)
 {
+	// Save frame coordinates before temporarily converting dimensions to DXF units.
+	const QRectF inner_frame = diagram_rect_ | titleBlockRect() | bottomColumnsRect();
+	const QRectF outer_frame = borderAndTitleBlockRect();
 	// Transform to DXF scale.
 	columns_header_height_ *= Createdxf::yScale;
+	bottom_columns_header_height_ *= Createdxf::yScale;
 	heading_height_         *= Createdxf::yScale;
 	rows_height_           *= Createdxf::yScale;
 	rows_header_width_     *= Createdxf::xScale;
@@ -675,10 +796,7 @@ void BorderTitleBlock::drawDxf(
 
 	// draw the empty box that appears as soon as there is a header
 	// dessine la case vide qui apparait des qu'il y a un entete
-	if (display_border_ &&
-		(display_columns_ ||
-		 display_rows_)
-		) {
+	if (display_border_ && display_rows_) {
 		Createdxf::drawRectangle(
 			file_path,
 			double(diagram_rect_.topLeft().x()) * Createdxf::xScale,
@@ -692,16 +810,14 @@ void BorderTitleBlock::drawDxf(
 		);
 	}
 
-	QSettings settings;
-
 	// draw the numbering of the columns
 	// dessine la numerotation des colonnes
 	if (display_border_ &&
 		display_columns_) {
-	int offset = settings.value("border-columns_0", true).toBool() ? -1 : 0;
+	int offset = columns_start_at_zero_ ? -1 : 0;
 		for (int i = 1 ; i <= columns_count_ ; ++ i) {
 	    double xCoord = diagram_rect_.topLeft().x() * Createdxf::xScale +
-					(rows_header_width_ + ((i - 1) *
+			((display_rows_ ? rows_header_width_ : 0.0) + ((i - 1) *
 					 columns_width_));
 			double yCoord = Createdxf::sheetHeight
 		    - diagram_rect_.topLeft().y()*Createdxf::yScale
@@ -724,6 +840,14 @@ void BorderTitleBlock::drawDxf(
 			   1,
 			   color);
 	}
+		if (display_rows_ && row_headers_both_sides_) {
+			Createdxf::drawRectangle(file_path,
+					diagram_rect_.left() * Createdxf::xScale + rows_header_width_
+						+ columns_count_ * columns_width_,
+						Createdxf::sheetHeight - diagram_rect_.top() * Createdxf::yScale
+						- columns_header_height_,
+						rows_header_width_, columns_header_height_, color);
+		}
 	}
 
 	// draw line numbering
@@ -760,6 +884,22 @@ void BorderTitleBlock::drawDxf(
 			   color);
 			row_string = incrementLetters(row_string);
 		}
+		if (row_headers_both_sides_) {
+			for (int i = 1; i <= rows_count_; ++i) {
+				const double xCoord = diagram_rect_.left() * Createdxf::xScale
+						+ rows_header_width_ + columns_count_ * columns_width_;
+				const double yCoord = Createdxf::sheetHeight
+						- (diagram_rect_.top() + columns_header_height_
+						   + heading_height_ + i * rows_height_) * Createdxf::yScale;
+				Createdxf::drawRectangle(file_path, xCoord, yCoord,
+						 rows_header_width_, rows_height_, color);
+				Createdxf::drawTextAligned(file_path, BorderCellLabels::rowLabel(i),
+						xCoord + rows_header_width_ * 0.1,
+						yCoord + rows_height_ * 0.4,
+						rows_header_width_ * 0.7, 0, 0, 1, 2,
+						xCoord + rows_header_width_ / 2, 1, color);
+			}
+		}
 	}
 
 	// render the titleblock, using the TitleBlockTemplate object
@@ -772,9 +912,63 @@ void BorderTitleBlock::drawDxf(
 							    color);
 		//qp -> translate(-titleblock_rect_.topLeft());
 	}
+	if (display_border_ && display_columns_ && bottom_columns_header_height_ > 0.0) {
+		const double x0 = diagram_rect_.left() * Createdxf::xScale + rows_header_width_;
+		const double y0 = Createdxf::sheetHeight - (diagram_rect_.top() + diagram_rect_.height()
+				+ m_titleblock_template_renderer->height()) * Createdxf::yScale
+				- bottom_columns_header_height_;
+		const int offset = columns_start_at_zero_ ? -1 : 0;
+		Createdxf::drawRectangle(file_path, x0, y0,
+				columns_count_ * columns_width_, bottom_columns_header_height_, color);
+		for (int i = 1; i <= columns_count_; ++i) {
+			const double x = x0 + (i - 1) * columns_width_;
+			Createdxf::drawTextAligned(file_path, QString::number(i + offset),
+					x + columns_width_ / 4, y0 + bottom_columns_header_height_ * 0.5,
+					bottom_columns_header_height_ * 0.7, 0, 0, 1, 2,
+					x + columns_width_ / 2, 1, color);
+		}
+		const double tick_height = bottom_columns_header_height_ * 0.35;
+		for (int i = 1; i < columns_count_; ++i) {
+			const double x = x0 + i * columns_width_;
+			Createdxf::drawLine(file_path, x, y0 + bottom_columns_header_height_,
+					x, y0 + bottom_columns_header_height_ - tick_height, color);
+		}
+	}
+
+	if (display_border_ && outer_border_margin_ > 0.0) {
+		const QRectF outer = outer_frame;
+		const QRectF inner = inner_frame;
+		Createdxf::drawRectangle(file_path,
+				double(outer.left()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(outer.bottom()) * Createdxf::yScale,
+				double(outer.width()) * Createdxf::xScale,
+				double(outer.height()) * Createdxf::yScale,
+				color);
+		Createdxf::drawLine(file_path,
+				double(outer.left()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(outer.top()) * Createdxf::yScale,
+				double(inner.left()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(inner.top()) * Createdxf::yScale, color);
+		Createdxf::drawLine(file_path,
+				double(outer.right()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(outer.top()) * Createdxf::yScale,
+				double(inner.right()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(inner.top()) * Createdxf::yScale, color);
+		Createdxf::drawLine(file_path,
+				double(outer.left()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(outer.bottom()) * Createdxf::yScale,
+				double(inner.left()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(inner.bottom()) * Createdxf::yScale, color);
+		Createdxf::drawLine(file_path,
+				double(outer.right()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(outer.bottom()) * Createdxf::yScale,
+				double(inner.right()) * Createdxf::xScale,
+				Createdxf::sheetHeight - double(inner.bottom()) * Createdxf::yScale, color);
+	}
 
 	// Transform back to QET scale
 	columns_header_height_ /= Createdxf::yScale;
+	bottom_columns_header_height_ /= Createdxf::yScale;
 	heading_height_         /= Createdxf::yScale;
 	rows_height_		   /= Createdxf::yScale;
 	rows_header_width_     /= Createdxf::xScale;
@@ -833,6 +1027,30 @@ void BorderTitleBlock::setColumnsWidth(const qreal &new_cw) {
 void BorderTitleBlock::setColumnsHeaderHeight(const qreal &new_chh) {
 	columns_header_height_ = qBound(qreal(5.0), new_chh, qreal(50.0));
 	updateRectangles();
+}
+
+void BorderTitleBlock::setBottomColumnsHeaderHeight(const qreal &height) {
+	const qreal bounded = qBound(qreal(0.0), height, qreal(50.0));
+	if (bottom_columns_header_height_ == bounded) return;
+	bottom_columns_header_height_ = bounded;
+	updateRectangles();
+}
+
+void BorderTitleBlock::setRowHeadersOnBothSides(bool enabled) {
+	if (row_headers_both_sides_ == enabled) return;
+	row_headers_both_sides_ = enabled;
+	updateRectangles();
+}
+
+void BorderTitleBlock::setOuterBorderMargin(const qreal &margin) {
+	const qreal bounded = qBound(qreal(0.0), margin, qreal(50.0));
+	if (outer_border_margin_ == bounded) return;
+	const QRectF previous_frame = borderAndTitleBlockRect();
+	const QRectF previous_diagram = diagram_rect_;
+	outer_border_margin_ = bounded;
+	updateRectangles();
+	if (diagram_rect_ == previous_diagram)
+		emit borderChanged(previous_frame, borderAndTitleBlockRect());
 }
 
 void BorderTitleBlock::setHeadingHeight(const qreal &new_height) {
@@ -921,7 +1139,7 @@ void BorderTitleBlock::setDiagramHeight(const qreal &height) {
 DiagramPosition BorderTitleBlock::convertPosition(const QPointF &pos)
 {
 	if(!insideBorderRect().contains(pos))
-		return (DiagramPosition("", 0));
+		return (DiagramPosition("", 0, columns_start_at_zero_));
 
 	QPointF relative_pos = pos - insideBorderRect().topLeft();
 	int row_number    = int(ceil(relative_pos.x() / columnsWidth()));
@@ -931,7 +1149,7 @@ DiagramPosition BorderTitleBlock::convertPosition(const QPointF &pos)
 	for (int i = 1 ; i < column_number ; ++ i)
 		letter = incrementLetters(letter);
 
-	return(DiagramPosition(letter, row_number));
+	return(DiagramPosition(letter, row_number, columns_start_at_zero_));
 }
 
 /**
@@ -1024,8 +1242,7 @@ QRectF BorderTitleBlock::cellRect(const QString &cell) const
 	}
 
 	int column = match.captured(2).toInt();
-	QSettings settings;
-	if (settings.value("border-columns_0", true).toBool())
+	if (columns_start_at_zero_)
 		++column;
 
 	if (row < 1 || column < 1 || column > columns_count_)

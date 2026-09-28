@@ -15,6 +15,7 @@ TitleBlockCell::TitleBlockCell()
 	alignment = Qt::AlignCenter | Qt::AlignVCenter;
 	font_size = 9;
 	hadjust = false;
+	draw_border = true;
 	logo_reference = QString("");
 }
 
@@ -76,6 +77,8 @@ void TitleBlockCell::setAttribute(const QString &attribute, const QVariant &attr
 		font_size = attr_value.toInt();
 	} else if (attribute == "horizontal_adjust") {
 		hadjust = attr_value.toBool();
+	} else if (attribute == "border") {
+		draw_border = attr_value.toBool();
 	}
 }
 
@@ -102,6 +105,8 @@ QVariant TitleBlockCell::attribute(const QString &attribute) {
 		return(TitleBlockTemplate::fontForCell(*this).pointSizeF());
 	} else if (attribute == "horizontal_adjust") {
 		return(hadjust);
+	} else if (attribute == "border") {
+		return(draw_border);
 	}
 	return(QVariant());
 }
@@ -155,6 +160,7 @@ void TitleBlockCell::loadContentFromCell(const TitleBlockCell &other_cell) {
 	font_size = other_cell.font_size;
 	alignment = other_cell.alignment;
 	hadjust = other_cell.hadjust;
+	draw_border = other_cell.draw_border;
 }
 
 /**
@@ -174,6 +180,7 @@ void TitleBlockCell::loadContentFromXml(const QDomElement &cell_element) {
 		}
 	} else if (cell_element.tagName() == "field") {
 		cell_type = TitleBlockCell::TextCell;
+		draw_border = cell_element.attribute("border", "true").compare("false", Qt::CaseInsensitive) != 0;
 		
 		QHash<QString, QString> names_options;
 		names_options["TagName"] = "translation";
@@ -247,6 +254,7 @@ void TitleBlockCell::saveContentToXml(QDomElement &cell_elmt) {
 		cell_elmt.appendChild(label.toXml(parent_document, names_options));
 		
 		cell_elmt.setAttribute("displaylabel", display_label ? "true" : "false");
+		if (!draw_border) cell_elmt.setAttribute("border", "false");
 		if (font_size != -1) {
 			cell_elmt.setAttribute("fontsize", font_size);
 		}

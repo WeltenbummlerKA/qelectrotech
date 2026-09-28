@@ -28,7 +28,7 @@
 class DiagramPosition {
 	// constructors, destructor
 	public:
-	DiagramPosition(const QString & = "", unsigned int = 0);
+	DiagramPosition(const QString & = "", unsigned int = 0, bool columns_start_at_zero = true);
 	virtual ~DiagramPosition();
 
 	// methods
@@ -44,6 +44,7 @@ class DiagramPosition {
 	private:
 	QString letter_;
 	unsigned int number_;
+	bool columns_start_at_zero_;
 	QPointF position_;
 };
 #endif

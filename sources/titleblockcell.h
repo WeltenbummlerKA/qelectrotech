@@ -73,6 +73,7 @@ class TitleBlockCell {
 	int alignment;                     ///< Where the label+text should be displayed within the visual cell
 	int font_size;                     ///< Font size the text should be rendered with
 	bool hadjust;                      ///< Whether to reduce the font size if the text does not fit in the cell
+	bool draw_border;                  ///< Whether this field draws its own cell border
 	QString logo_reference;            ///< Logo displayed by this cell, it it is a logo cell
 };
 #endif

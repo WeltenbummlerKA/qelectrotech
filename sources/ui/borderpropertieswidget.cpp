@@ -54,12 +54,16 @@ void BorderPropertiesWidget::setProperties(const BorderProperties &bp)
 	ui -> m_colums_count_sp    ->setValue   (m_properties.columns_count);
 	ui -> m_columns_width_sp   ->setValue   (m_properties.columns_width);
 	ui -> m_column_header_height_sp ->setValue(m_properties.columns_header_height);
+	ui -> m_bottom_column_header_height_sp ->setValue(m_properties.bottom_columns_header_height);
 	ui -> m_heading_height_sp ->setValue(m_properties.heading_height);
 	ui -> m_row_header_width_sp ->setValue(m_properties.rows_header_width);
 	ui -> m_display_columns_cb ->setChecked (m_properties.display_columns);
+	ui -> m_columns_start_at_zero_cb ->setChecked(m_properties.columns_start_at_zero);
 	ui -> m_rows_count_sp      ->setValue   (m_properties.rows_count);
 	ui -> m_rows_height_sp     ->setValue   (m_properties.rows_height);
 	ui -> m_display_rows_cb    ->setChecked (m_properties.display_rows);
+	ui -> m_row_headers_both_sides_cb ->setChecked(m_properties.row_headers_both_sides);
+	ui -> m_outer_border_margin_sp ->setValue(m_properties.outer_border_margin);
 }
 
 /**
@@ -71,12 +75,16 @@ const BorderProperties &BorderPropertiesWidget::properties ()
 	m_properties.columns_count   = ui -> m_colums_count_sp    -> value();
 	m_properties.columns_width   = ui -> m_columns_width_sp   -> value();
 	m_properties.columns_header_height = ui -> m_column_header_height_sp -> value();
+	m_properties.bottom_columns_header_height = ui -> m_bottom_column_header_height_sp -> value();
 	m_properties.heading_height = ui -> m_heading_height_sp -> value();
 	m_properties.rows_header_width = ui -> m_row_header_width_sp -> value();
 	m_properties.display_columns = ui -> m_display_columns_cb -> isChecked();
+	m_properties.columns_start_at_zero = ui -> m_columns_start_at_zero_cb -> isChecked();
 	m_properties.rows_count      = ui -> m_rows_count_sp      -> value();
 	m_properties.rows_height     = ui -> m_rows_height_sp     -> value();
 	m_properties.display_rows    = ui -> m_display_rows_cb    -> isChecked();
+	m_properties.row_headers_both_sides = ui -> m_row_headers_both_sides_cb -> isChecked();
+	m_properties.outer_border_margin = ui -> m_outer_border_margin_sp -> value();
 	return m_properties;
 }
 

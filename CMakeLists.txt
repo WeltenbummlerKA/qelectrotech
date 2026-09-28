@@ -257,6 +257,21 @@ else()
     )
 endif()
 
+if(APPLE)
+    # Development builds run from the app bundle as well as from the install
+    # tree. Keep the forced MAM German catalog where QET_LANG_PATH resolves
+    # inside a macOS bundle (Contents/Resources/lang).
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/lang"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_BINARY_DIR}/lang/qet_de.qm"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/lang/qet_de.qm"
+        COMMENT "Staging the German QElectroTech translation in the app bundle"
+        VERBATIM
+    )
+endif()
+
 
 # Optional precompiled headers -- see QET_ENABLE_PCH in
 # cmake/developer_options.cmake for what this trades away.

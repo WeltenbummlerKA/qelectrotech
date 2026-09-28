@@ -96,11 +96,10 @@ void CellRuler::paintEvent(QPaintEvent *event)
 
 	const int count = horizontal ? border.columnsCount() : border.rowsCount();
 	const qreal cell_size = horizontal ? border.columnsWidth() : border.rowsHeight();
-		//Where BorderTitleBlock::draw() puts the first cell: after the
-		//other header's room even when that header is hidden, which
-		//insideBorderRect() does not account for
+		//The top ruler starts after row labels only when those labels are shown.
 	const qreal first = Diagram::margin
-			+ (horizontal ? border.rowsHeaderWidth() : border.columnsHeaderHeight());
+			+ (horizontal ? (border.rowsAreDisplayed() ? border.rowsHeaderWidth() : 0.0)
+				      : border.columnsHeaderHeight());
 	const qreal scale = horizontal ? transform.m11() : transform.m22();
 	const qreal offset = (horizontal ? transform.dx() : transform.dy()) + m_leading_space;
 	const qreal cell_pixels = cell_size * scale;
@@ -108,8 +107,7 @@ void CellRuler::paintEvent(QPaintEvent *event)
 		return;
 	}
 
-	const bool columns_start_at_zero =
-			QSettings().value("border-columns_0", true).toBool();
+	const bool columns_start_at_zero = border.columnsStartAtZero();
 	auto label = [&](int index) {
 		return horizontal ? BorderCellLabels::columnLabel(index, columns_start_at_zero)
 				  : BorderCellLabels::rowLabel(index);

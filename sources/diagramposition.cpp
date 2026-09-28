@@ -26,11 +26,13 @@
 	parametre, il en resulte un objet DiagramPosition invalide, dont la methode
 	isOutOfBounds renverra true.
 */
-DiagramPosition::DiagramPosition(const QString &letter, unsigned int number) {
+DiagramPosition::DiagramPosition(const QString &letter, unsigned int number,
+				 bool columns_start_at_zero) {
 	// purifie les lettres
 	letter_ = letter.toUpper();
 	letter_.remove(QRegularExpression("[^A-Z]"));
 	number_ = number;
+	columns_start_at_zero_ = columns_start_at_zero;
 }
 
 /**
@@ -63,9 +65,7 @@ QString DiagramPosition::toString()
 	if (isOutOfBounds()) {
 		return("-");
 	}
-	QSettings settings;
-
-	if (settings.value("border-columns_0", true).toBool()){
+	if (columns_start_at_zero_){
 	return(QString("%1%2").arg(letter_).arg(number_ - 1));
 	}else{
 	return(QString("%1%2").arg(letter_).arg(number_));

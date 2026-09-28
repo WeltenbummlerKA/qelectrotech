@@ -255,7 +255,6 @@ void GeneralConfigurationPage::applyConf()
 		QETApp::instance()->useCustomPalette(custom_color);
 	}
 	settings.setValue("border-columns_0",ui->m_border_0->isChecked());
-	settings.setValue("lang", ui->m_lang_cb->itemData(ui->m_lang_cb->currentIndex()).toString());
 
 		//hdpi
 	QetSettings::setHdpiScaleFactorRoundingPolicy(ui->m_hdpi_round_policy_cb->currentData().toString());
@@ -458,18 +457,12 @@ void GeneralConfigurationPage::fillLang()
 	ui->m_lang_cb->addItem(QET::Icons::uk,		tr("Ukrainien"), "uk");
 	ui->m_lang_cb->addItem(QET::Icons::zh,		tr("Chinois"), "zh");
 	ui->m_lang_cb->addItem(QET::Icons::se,		tr("Suédois"), "sv");
-		//set current index to the lang found in setting file
-		//if lang doesn't exist set to system
-	QSettings settings;
-	for (int i=0; i<ui->m_lang_cb->count(); i++)
-	{
-		if (ui->m_lang_cb->itemData(i).toString() == settings.value("lang").toString())
-		{
-			ui->m_lang_cb->setCurrentIndex(i);
-			return;
-		}
-	}
-	ui->m_lang_cb->setCurrentIndex(0);
+	// This MAM build pins the application language in QETApp::langFromSetting.
+	// Keep the control truthful without rewriting the shared QET preference.
+	ui->m_lang_cb->setCurrentIndex(ui->m_lang_cb->findData("de"));
+	ui->m_lang_cb->setEnabled(false);
+	ui->m_lang_cb->setToolTip(QStringLiteral(
+		"Die Sprache dieses MAM-Builds ist fest auf Deutsch eingestellt."));
 }
 
 /**

@@ -1741,7 +1741,10 @@ void DiagramView::mouseDoubleClickEvent(QMouseEvent *e)
 	//Get the click pos on the diagram
 	QPointF click_pos = viewportTransform().inverted().map(e -> pos());
 
-	if (bi.titleBlockRect().contains(click_pos) || bi.columnsRect().contains(click_pos) || bi.rowsRect().contains(click_pos)) {
+	if (bi.titleBlockRect().contains(click_pos)
+			|| bi.columnsRect().contains(click_pos)
+			|| bi.bottomColumnsRect().contains(click_pos)
+			|| bi.rowsRect().contains(click_pos)) {
 		e->accept();
 		editDiagramProperties();
 		return;
