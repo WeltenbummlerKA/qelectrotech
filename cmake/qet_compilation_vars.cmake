@@ -647,6 +647,8 @@ set(QET_SRC_FILES
   ${QET_DIR}/sources/TerminalStrip/realterminal.h
   ${QET_DIR}/sources/TerminalStrip/terminalstripbridge.cpp
   ${QET_DIR}/sources/TerminalStrip/terminalstripbridge.h
+  ${QET_DIR}/sources/TerminalStrip/terminalstripassignmentservice.cpp
+  ${QET_DIR}/sources/TerminalStrip/terminalstripassignmentservice.h
   ${QET_DIR}/sources/TerminalStrip/terminalstrip.cpp
   ${QET_DIR}/sources/TerminalStrip/terminalstrip.h
   ${QET_DIR}/sources/TerminalStrip/terminalstripdata.cpp

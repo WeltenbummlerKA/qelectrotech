@@ -54,6 +54,7 @@ namespace CLIExport {
 		  qelectrotech --export-mam-summary <project.qet> <output.csv>
 		  qelectrotech --export-mam-terminal-potential <project.qet> <output.csv>
 		  qelectrotech --export-mam-terminal-strip <project.qet> <output.csv>
+		  qelectrotech --assign-terminal-strip <project.qet> <output.qet> <prefix>
 		  qelectrotech --info           <project.qet> [output.json]
 		  qelectrotech --check-elements <element.elmt | directory>
 		  qelectrotech --resave         <project.qet> <output.qet>
@@ -83,6 +84,9 @@ namespace CLIExport {
 		       one row per conductor with endpoint and potential-group facts.
 		mam-terminal-strip: private MAM read-only terminal-strip CSV, one row
 		       per real terminal with strip, order, level, folio, and bridge facts.
+		assign-terminal-strip: create/update a simple single-level terminal
+		       strip named exactly <prefix> from free plan terminals labelled
+		       <prefix>:<number>, sorted naturally by numeric suffix.
 		info: structural project summary as JSON (stdout, or a file) —
 		      per-page element / conductor counts and unconnected terminals.
 		check-elements: validate .elmt file(s) against the element schema.

@@ -28,6 +28,7 @@
 #include "diagramposition.h"
 #include "pdf_links.h"
 #include "plcioprojectionservice.h"
+#include "properties/elementdata.h"
 #include "qetgraphicsitem/conductor.h"
 #include "qetgraphicsitem/element.h"
 #include "qetgraphicsitem/terminal.h"
@@ -35,6 +36,7 @@
 #include "TerminalStrip/physicalterminal.h"
 #include "TerminalStrip/realterminal.h"
 #include "TerminalStrip/terminalstrip.h"
+#include "TerminalStrip/terminalstripassignmentservice.h"
 #include "TerminalStrip/terminalstripbridge.h"
 #include "titleblockproperties.h"
 #include "wiringlistexport.h"
@@ -87,6 +89,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-mam-summary", "mam-summary"},
 		{"--export-mam-terminal-potential", "mam-terminal-potential"},
 		{"--export-mam-terminal-strip", "mam-terminal-strip"},
+		{"--assign-terminal-strip", "assign-terminal-strip"},
 		{"--info", "info"},
 		{"--check-elements", "check"},
 		{"--resave", "resave"},
@@ -617,6 +620,120 @@ Element *terminalElement(Terminal *terminal)
 	return terminal ? terminal->parentElement() : nullptr;
 }
 
+QString terminalTypeName(ElementData::TerminalType type)
+{
+	return ElementData::terminalTypeToString(type);
+}
+
+QString terminalFunctionName(ElementData::TerminalFunction function)
+{
+	return ElementData::terminalFunctionToString(function);
+}
+
+QString elementInfoValue(Element *element, const QString &key)
+{
+	return element ? element->elementInformations().value(key).toString() : QString();
+}
+
+QString physicalTerminalKey(TerminalStrip *strip, int physical_index)
+{
+	return strip
+		? uuidString(strip->uuid()) % QLatin1Char(':') % QString::number(physical_index + 1)
+		: QString();
+}
+
+struct TerminalStripConnectionRecord
+{
+	QString connected_terminal;
+	QString connected_conductor_uuid;
+	QString connected_conductor;
+	QString connected_cable;
+	QString connected_wire_color;
+	QString connected_wire_section;
+	QString connected_conductor_function;
+	QString counterpart_element;
+	QString counterpart_element_uuid;
+	QString counterpart_terminal;
+	QString counterpart_folio;
+};
+
+template <typename Getter>
+QString joinedEvidence(const QVector<TerminalStripConnectionRecord> &records, Getter getter)
+{
+	QStringList values;
+	for (const TerminalStripConnectionRecord &record : records)
+		values << getter(record);
+	return values.join(QStringLiteral(" | "));
+}
+
+QVector<TerminalStripConnectionRecord> terminalStripConnectionEvidence(
+		Element *element,
+		const QHash<Diagram *, int> &folios)
+{
+	QVector<TerminalStripConnectionRecord> records;
+	if (!element)
+		return records;
+
+	QSet<Conductor *> seen_conductors;
+	for (Terminal *terminal : element->terminals()) {
+		if (!terminal)
+			continue;
+
+		for (Conductor *conductor : terminal->conductors()) {
+			if (!conductor || seen_conductors.contains(conductor))
+				continue;
+
+			Terminal *other_terminal = nullptr;
+			if (conductor->terminal1 == terminal)
+				other_terminal = conductor->terminal2;
+			else if (conductor->terminal2 == terminal)
+				other_terminal = conductor->terminal1;
+			else
+				continue;
+
+			seen_conductors.insert(conductor);
+			Element *other_element = terminalElement(other_terminal);
+			records.append({
+				terminalName(terminal),
+				uuidString(conductor->uuid()),
+				conductor->properties().text,
+				conductor->properties().m_cable,
+				conductor->properties().m_wire_color,
+				conductor->properties().m_wire_section,
+				conductor->properties().m_function,
+				other_element ? elementLabel(other_element) : QString(),
+				other_element ? uuidString(other_element->uuid()) : QString(),
+				terminalName(other_terminal),
+				other_element && other_element->diagram()
+					? QString::number(folios.value(other_element->diagram(), 0))
+					: QString()
+			});
+		}
+	}
+
+	std::sort(records.begin(), records.end(),
+			  [](const TerminalStripConnectionRecord &left,
+				 const TerminalStripConnectionRecord &right) {
+		const QString left_key = left.connected_terminal
+			% QLatin1Char('|') % left.connected_conductor
+			% QLatin1Char('|') % left.connected_cable
+			% QLatin1Char('|') % left.connected_wire_color
+			% QLatin1Char('|') % left.connected_conductor_uuid
+			% QLatin1Char('|') % left.counterpart_element
+			% QLatin1Char('|') % left.counterpart_terminal;
+		const QString right_key = right.connected_terminal
+			% QLatin1Char('|') % right.connected_conductor
+			% QLatin1Char('|') % right.connected_cable
+			% QLatin1Char('|') % right.connected_wire_color
+			% QLatin1Char('|') % right.connected_conductor_uuid
+			% QLatin1Char('|') % right.counterpart_element
+			% QLatin1Char('|') % right.counterpart_terminal;
+		return left_key < right_key;
+	});
+
+	return records;
+}
+
 /// From-to wiring list: one row per conductor, each endpoint resolved to its
 /// element label and terminal name.
 ///
@@ -904,9 +1021,18 @@ int exportMamTerminalStrip(QETProject &project, const QString &output)
 
 	static const QStringList columns {
 		"strip_installation", "strip_location", "strip_name", "strip_uuid",
-		"physical_index", "level", "level_count",
+		"physical_terminal_key", "physical_index", "level", "level_count",
 		"terminal_label", "terminal_uuid", "terminal_folio",
-		"terminal_xref", "terminal_name", "conductor",
+		"terminal_xref", "terminal_name", "terminal_type", "terminal_function",
+		"terminal_manufacturer", "terminal_designation", "terminal_description",
+		"terminal_led", "terminal_is_multilevel",
+		"conductor",
+		"connection_count", "connected_terminals",
+		"connected_conductor_uuids", "connected_conductors",
+		"connected_cables", "connected_wire_colors",
+		"connected_wire_sections", "connected_conductor_functions",
+		"counterpart_elements", "counterpart_element_uuids",
+		"counterpart_terminals", "counterpart_folios",
 		"bridge_uuid", "bridge_color", "status", "warnings"
 	};
 
@@ -928,6 +1054,8 @@ int exportMamTerminalStrip(QETProject &project, const QString &output)
 
 				Element *element = real->element();
 				QSharedPointer<TerminalStripBridge> bridge = real->bridge();
+				const QVector<TerminalStripConnectionRecord> connections =
+					terminalStripConnectionEvidence(element, folios);
 				QStringList row_warnings;
 				if (strip->name().isEmpty())
 					row_warnings << QStringLiteral("empty strip_name");
@@ -947,6 +1075,7 @@ int exportMamTerminalStrip(QETProject &project, const QString &output)
 					strip->location(),
 					strip->name(),
 					uuidString(strip->uuid()),
+					physicalTerminalKey(strip, physical_index),
 					QString::number(physical_index + 1),
 					QString::number(real->level() + 1),
 					QString::number(physical->levelCount()),
@@ -957,7 +1086,48 @@ int exportMamTerminalStrip(QETProject &project, const QString &output)
 						: QString(),
 					real->Xref(),
 					element ? element->name() : QString(),
+					terminalTypeName(real->type()),
+					terminalFunctionName(real->function()),
+					elementInfoValue(element, QStringLiteral("manufacturer")),
+					elementInfoValue(element, QStringLiteral("designation")),
+					elementInfoValue(element, QStringLiteral("description")),
+					real->isLed() ? QStringLiteral("true") : QStringLiteral("false"),
+					physical->levelCount() > 1 ? QStringLiteral("true") : QStringLiteral("false"),
 					real->conductor(),
+					QString::number(connections.size()),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.connected_terminal;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.connected_conductor_uuid;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.connected_conductor;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.connected_cable;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.connected_wire_color;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.connected_wire_section;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.connected_conductor_function;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.counterpart_element;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.counterpart_element_uuid;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.counterpart_terminal;
+					}),
+					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
+						return r.counterpart_folio;
+					}),
 					bridge ? uuidString(bridge->uuid()) : QString(),
 					bridge ? bridge->color().name(QColor::HexRgb) : QString(),
 					status,
@@ -1346,6 +1516,46 @@ int resaveProject(QETProject &project, const QString &output)
 	return 0;
 }
 
+int assignTerminalStrip(QETProject &project, const QString &output, const QString &prefix)
+{
+	if (prefix.isEmpty()) {
+		err << "No terminal-strip prefix given (expected e.g. -X1).\n";
+		return 2;
+	}
+
+	const TerminalStripAssignmentService::Result assignment =
+		TerminalStripAssignmentService::assignSingleLevelByPrefix(&project, prefix);
+	if (assignment.skipped_non_single_level_strip) {
+		err << "Terminal strip " << prefix
+			<< " already contains non-matching or multi-level terminals; "
+			   "single-level assignment left it unchanged.\n";
+		return 1;
+	}
+	if (!assignment.strip) {
+		err << "No free single-level terminal labels found for prefix "
+			<< prefix << ".\n";
+		return 1;
+	}
+
+	const QDomDocument doc = project.toXml();
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << doc.toString(4);
+	file.close();
+	out << "Assigned terminal strip " << prefix
+		<< ": created=" << (assignment.created_strip ? "true" : "false")
+		<< ", matched_free=" << assignment.matched_free_terminals
+		<< ", added=" << assignment.added_terminals
+		<< ", strip_terminals=" << assignment.matching_strip_terminals
+		<< ", reordered=" << (assignment.reordered ? "true" : "false")
+		<< " -> " << output << "\n";
+	return 0;
+}
+
 /// Stamp title-block fields onto every folio (and the project default), then
 /// save.  Each assignment is "key=value".  Standard keys map to the documented
 /// title-block fields; "date=today" uses the current date; any other key is
@@ -1501,6 +1711,11 @@ int run(const QStringList &args)
 			<< " <project.qet> <output>\n";
 		return 2;
 	}
+	if (format == "assign-terminal-strip" && rest.value(2).isEmpty()) {
+		err << "Usage: qelectrotech --assign-terminal-strip "
+			   "<project.qet> <output.qet> <prefix>\n";
+		return 2;
+	}
 	if (format == "pdf")
 		return exportPdf(project, output, showTerminals);
 	if (format == "cables" || format == "wires")
@@ -1523,6 +1738,8 @@ int run(const QStringList &args)
 		return exportMamTerminalPotential(project, output);
 	if (format == "mam-terminal-strip")
 		return exportMamTerminalStrip(project, output);
+	if (format == "assign-terminal-strip")
+		return assignTerminalStrip(project, output, rest.value(2));
 	if (format == "resave")
 		return resaveProject(project, output);
 	if (format == "settb")

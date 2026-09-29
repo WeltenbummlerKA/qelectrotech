@@ -424,6 +424,14 @@
                     <terminal orientation="1" y="0" x="-10" id="22"/>
                 </terminals>
                 <inputs/>
+                <elementInformations>
+                    <elementInformation show="1" name="manufacturer">WAGO</elementInformation>
+                    <elementInformation show="1" name="designation">2000-1201</elementInformation>
+                    <elementInformation show="1" name="description">1mm2 2L terminal block</elementInformation>
+                </elementInformations>
+                <properties>
+                    <element_type terminal_type="generic" terminal_function="generic" terminal_led="true"/>
+                </properties>
                 <dynamic_texts/>
                 <texts_groups/>
             </element>
@@ -434,6 +442,36 @@
                     <terminal orientation="1" y="0" x="-10" id="25"/>
                 </terminals>
                 <inputs/>
+                <dynamic_texts/>
+                <texts_groups/>
+            </element>
+            <element orientation="0" freezeLabel="false" type="embed://import/probe/synthetic_terminal_block.elmt" z="10" uuid="{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3}" prefix="" y="1260" x="760">
+                <terminals>
+                    <terminal orientation="0" y="-10" x="0" id="26"/>
+                    <terminal orientation="2" y="10" x="0" id="27"/>
+                    <terminal orientation="1" y="0" x="-10" id="28"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation show="1" name="manufacturer">Phoenix Contact</elementInformation>
+                    <elementInformation show="1" name="designation">PT 2,5-2L</elementInformation>
+                    <elementInformation show="1" name="description">Synthetic double-level terminal level A</elementInformation>
+                </elementInformations>
+                <dynamic_texts/>
+                <texts_groups/>
+            </element>
+            <element orientation="0" freezeLabel="false" type="embed://import/probe/synthetic_terminal_block.elmt" z="10" uuid="{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4}" prefix="" y="1300" x="760">
+                <terminals>
+                    <terminal orientation="0" y="-10" x="0" id="29"/>
+                    <terminal orientation="2" y="10" x="0" id="30"/>
+                    <terminal orientation="1" y="0" x="-10" id="31"/>
+                </terminals>
+                <inputs/>
+                <elementInformations>
+                    <elementInformation show="1" name="manufacturer">Phoenix Contact</elementInformation>
+                    <elementInformation show="1" name="designation">PT 2,5-2L</elementInformation>
+                    <elementInformation show="1" name="description">Synthetic double-level terminal level B</elementInformation>
+                </elementInformations>
                 <dynamic_texts/>
                 <texts_groups/>
             </element>
@@ -460,6 +498,12 @@
             <conductor text_color="#000000" terminalname2="tap" freezeLabel="false" terminalname1="bottom" bus="" type="multi" element2_label="" conductor_section="1.5" element2="{dc1e8bdf-ce98-5f8e-8e72-8cbe654d0062}" color2="#000000" element1="{15e1997c-4eb6-50df-8629-22efc1524f2f}" num="W011" x="0" cable="CABLE-A" element2_name="v2_busstub_n" formula="" conductor_color="BK" condsize="1" element1_name="v2_no_contact" displaytext="0" tension_protocol="" vertirotatetext="270" bicolor="false" numsize="7" function="CTRL" horizrotatetext="0" element1_label="" horizontal-alignment="AlignBottom" onetextperfolio="0" terminal1="{c9545907-50fe-500b-a6c7-7e0cd3936950}" terminal2="{515aaabf-a848-5922-8e0e-30b9442a6004}" vertical-alignment="AlignRight" dash-size="1" y="0">
                 <sequentialNumbers/>
             </conductor>
+            <conductor uuid="{dddddddd-dddd-4ddd-8ddd-dddddddddd01}" text_color="#000000" terminalname2="bottom" freezeLabel="false" terminalname1="top" bus="" type="multi" element2_label="" conductor_section="1.5" element2="{15e1997c-4eb6-50df-8629-22efc1524f2f}" color2="#000000" element1="{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1}" num="XT1-W1" x="0" cable="CABLE-A" element2_name="v2_no_contact" formula="" conductor_color="BK" condsize="1" element1_name="synthetic_terminal_block" displaytext="0" tension_protocol="" vertirotatetext="270" bicolor="false" numsize="7" function="CTRL" horizrotatetext="0" element1_label="" horizontal-alignment="AlignBottom" onetextperfolio="0" terminal1="{323e68e1-514f-4e03-8ece-f22744a2d325}" terminal2="{c9545907-50fe-500b-a6c7-7e0cd3936950}" vertical-alignment="AlignRight" dash-size="1" y="0">
+                <sequentialNumbers/>
+            </conductor>
+            <conductor uuid="{dddddddd-dddd-4ddd-8ddd-dddddddddd02}" text_color="#000000" terminalname2="tap" freezeLabel="false" terminalname1="top" bus="" type="multi" element2_label="" conductor_section="1.5" element2="{dc1e8bdf-ce98-5f8e-8e72-8cbe654d0062}" color2="#000000" element1="{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2}" num="XT2-W1" x="0" cable="CABLE-A" element2_name="v2_busstub_n" formula="" conductor_color="BK" condsize="1" element1_name="synthetic_terminal_block" displaytext="0" tension_protocol="" vertirotatetext="270" bicolor="false" numsize="7" function="CTRL" horizrotatetext="0" element1_label="" horizontal-alignment="AlignBottom" onetextperfolio="0" terminal1="{323e68e1-514f-4e03-8ece-f22744a2d325}" terminal2="{515aaabf-a848-5922-8e0e-30b9442a6004}" vertical-alignment="AlignRight" dash-size="1" y="0">
+                <sequentialNumbers/>
+            </conductor>
         </conductors>
     </diagram>
     <terminal_strips>
@@ -479,6 +523,10 @@
                 </physical_terminal>
                 <physical_terminal>
                     <real_terminal element_uuid="{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2}"/>
+                </physical_terminal>
+                <physical_terminal>
+                    <real_terminal element_uuid="{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3}"/>
+                    <real_terminal element_uuid="{aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4}"/>
                 </physical_terminal>
             </layout>
             <terminal_strip_bridge uuid="{cccccccc-cccc-4ccc-8ccc-cccccccccccc}" color="#ff8800">
@@ -508,9 +556,9 @@
                             <line x1="0" y1="-10" x2="0" y2="-3" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false"/>
                             <ellipse x="-2.5" y="-2.5" width="5" height="5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="true"/>
                             <line x1="10" y1="0" x2="3" y2="0" end1="none" end2="none" length1="1.5" length2="1.5" style="line-style:normal;line-weight:normal;filling:none;color:black" antialias="false"/>
-                            <terminal uuid="{323e68e1-514f-4e03-8ece-f22744a2d325}" name="" x="0" y="-10" orientation="n" type="Generic"/>
-                            <terminal uuid="{c81262f0-711b-451d-a333-9039f4de25b6}" name="" x="0" y="10" orientation="s" type="Generic"/>
-                            <terminal uuid="{a33d1699-88d4-4071-a651-977d380e6e8c}" name="" x="10" y="0" orientation="e" type="Generic"/>
+                            <terminal uuid="{323e68e1-514f-4e03-8ece-f22744a2d325}" name="top" x="0" y="-10" orientation="n" type="Generic"/>
+                            <terminal uuid="{c81262f0-711b-451d-a333-9039f4de25b6}" name="bottom" x="0" y="10" orientation="s" type="Generic"/>
+                            <terminal uuid="{a33d1699-88d4-4071-a651-977d380e6e8c}" name="side" x="10" y="0" orientation="e" type="Generic"/>
                         </description>
                     </definition>
                 </element>

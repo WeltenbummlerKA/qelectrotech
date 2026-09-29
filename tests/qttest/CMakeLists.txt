@@ -384,6 +384,16 @@ target_compile_definitions(tst_mam_terminal_strip_export PRIVATE
   "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
 
 add_executable(
+  tst_terminalstrip_assignment
+  tst_terminalstrip_assignment.cpp)
+add_test(NAME tst_terminalstrip_assignment COMMAND tst_terminalstrip_assignment)
+add_dependencies(tst_terminalstrip_assignment qelectrotech)
+target_include_directories(tst_terminalstrip_assignment PRIVATE ${QET_DIR}/sources)
+target_link_libraries(tst_terminalstrip_assignment PRIVATE Qt::Test Qt::Core Qt::Xml)
+target_compile_definitions(tst_terminalstrip_assignment PRIVATE
+  "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
+
+add_executable(
   tst_mam_summary_export
   tst_mam_summary_export.cpp)
 add_test(NAME tst_mam_summary_export COMMAND tst_mam_summary_export)

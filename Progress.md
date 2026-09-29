@@ -199,7 +199,20 @@ Still open:
 - GUI verification is actively blocked by the user's macOS crash reports. The latest report (`2026-09-28 02:32:10`, PID 47009, incident `EF6A0C32-56F3-488A-AD84-9FF32EEE7B13`) is QET 0.200.1 ARM64 on macOS 26.6.1, `EXC_CRASH (SIGABRT)`, `abort()` in `HIServices::_RegisterApplication`, through AppKit menu-bar initialization and Qt `libqcocoa`, before `QApplication`/QET project processing. A GUI-style `--help` invocation reproduced the launch crash; successful headless PNG/PDF export is not GUI verification.
 
 ## Current Objective
-Build a usable CAE library for relay and contactor devices, beginning with complete coil contact inventories and linked NO/NC/changeover symbols so the previously implemented contact mirror shows every declared contact below the coil.
+Build the MAM CAE workflow in small dependable slices. For terminals, the immediate objective is deliberately flat: create/update a normal single-level terminal strip from existing schematic terminal labels before returning to multilevel, PE/SH, bridges, matrix, or graphical terminal-strip-plan work.
+
+### 2026-09-29 - Simple Terminal Strip Assignment Slice
+
+Completed:
+- Added `TerminalStripAssignmentService::assignSingleLevelByPrefix()` as the first write-path service for terminals.
+- Added CLI seam `--assign-terminal-strip <project.qet> <output.qet> <prefix>`.
+- The slice scans free schematic terminal elements labelled exactly `<prefix>:<number>`, creates the `TerminalStrip` named exactly `<prefix>` when needed, adds each matching terminal as a single-level `PhysicalTerminal`/`RealTerminal`, and sorts matching terminals naturally by numeric suffix.
+- Explicitly out of scope: UI, multilevel labels, PE/SH semantics, bridges, article/manufacturer logic, potential traversal, repair/migration, and terminal creation in the schematic.
+- Added `tst_terminalstrip_assignment` coverage deriving a temporary assignment input from the existing synthetic terminal fixture and verifying `-X1:1`, `-X1:2`, `-X1:10` order.
+
+Next:
+- Run the focused test once a local build/test binary is available.
+- After the flat assignment path is reliable, revisit read-only matrix projection and then multilevel assignment.
 
 ## Completed
 - Local repository inspected non-destructively on 2026-09-21.
@@ -699,3 +712,23 @@ Visually verify coil mirrors for the rest of the Eaton contactor/relay combinati
 - Verifikation Windows: `--check-elements` fuer die drei neuen MAM-Elemente meldet 3 OK, 0 Warnungen, 0 Fehler. `--export-png` rendert zwei Seiten nach `build/mam-strompfade-visible-png/`; Crops `crop-page1-arrows.png` und `crop-page2-arrows.png` zeigen Pfeil, grossen Potentialnamen und kleinen Gegenstellenverweis. `--export-mam-terminal-potential` bleibt bei 14 Leitern und 0 Warnungen.
 - Nutzerentscheidung: Strompfade sind fuer den ersten Stand i.O.; optischer Feinschliff erfolgt spaeter.
 - Noch bewusst offen: automatische Platzierung, echte Verknuepfung zwischen Fortfuehrungspfeilen, Renummerierung nach Seiten-/Pfadaenderungen und Feintuning von Abstaenden/Typografie im finalen MAM-Rahmen.
+
+### 2026-09-29 - Klemmenleisten-Gegenstellen-Evidenz
+- `--export-mam-terminal-strip` wurde read-only um direkte Anschluss-/Gegenstellen-Evidenz erweitert. Neue Felder: `terminal_type`, `terminal_function`, `connection_count`, `connected_terminals`, `connected_conductor_uuids`, `connected_conductors`, `connected_cables`, `connected_wire_colors`, `connected_wire_sections`, `connected_conductor_functions`, `counterpart_elements`, `counterpart_element_uuids`, `counterpart_terminals`, `counterpart_folios`.
+- Die Evidenz wird ausschliesslich aus den im geladenen Projekt vorhandenen Terminal-Elementen, deren `Terminal`-Objekten, direkt angeschlossenen `Conductor`-Endpunkten und deren vorhandenen `ConductorProperties` gelesen. Es wird keine Potentialgruppe verfolgt und keine Terminal-Strip-Semantik mit elektrischer Potential-Wahrheit verschmolzen.
+- PE ist in diesem Slice nur als bestehender Klemmentyp `ground` beobachtbar; ein belastbares SH-/Schirm-Feld existiert im aktuellen Modell nicht und wird nicht kuenstlich abgeleitet.
+- Die synthetische Klemmenleisten-Fixture enthaelt nun je eine beobachtbare direkte Verbindung fuer beide Testklemmen, damit der CSV-Export konkrete Gegenstellen statt nur leere Zusatzspalten prueft.
+- Bewusst unveraendert: keine UI, keine XML-Schema-/Persistenzaenderung, keine Reparatur, keine automatische Klemmennummerierung und kein Klemmenplan-Layout.
+
+### 2026-09-29 - Klemmenleisten Mehrstock-/Artikel-Evidenz
+- `--export-mam-terminal-strip` wurde read-only um Mehrstock- und Artikel-Evidenz erweitert. Neue Felder: `physical_terminal_key`, `terminal_manufacturer`, `terminal_designation`, `terminal_description`, `terminal_led`, `terminal_is_multilevel`.
+- `physical_terminal_key` ist ein stabiler Export-Schluessel aus `strip_uuid` und physischer Reihenfolge; die interne `PhysicalTerminal::uuid()` wird nicht verwendet, weil sie aktuell nicht als persistiertes Projektfeld gespeichert ist.
+- Mehrstockklemmen bleiben als eine physische Klemme mit mehreren `RealTerminal`-Ebenen sichtbar: vorhandene Felder `level` und `level_count` bleiben massgeblich, `terminal_is_multilevel` markiert nur `level_count > 1`.
+- Hersteller-/Artikelangaben werden nur aus vorhandenen `Element::elementInformations()` gelesen; `terminal_led` kommt aus der vorhandenen Terminal-ElementData. Keine Herstellerlogik fuer WAGO/Phoenix Contact/Weidmueller wurde erfunden.
+- Die synthetische Klemmenleisten-Fixture deckt nun zusaetzlich eine zweistoeckige physische Klemme und Artikelwerte ab. Bewusst unveraendert: keine UI, keine XML-Schema-/Persistenzaenderung, keine Reparatur, keine automatische Klemmennummerierung, keine Potentialverfolgung und kein Klemmenplan-Layout.
+
+### 2026-09-29 - Klemmenleisten-Recherche als Leitplanke angelegt
+- Auf Nutzerwunsch wurde die Klemmenleistenarbeit fachlich gegen Hersteller, CAE-Systeme und Normkontext recherchiert und in `MAM_Terminal_Strips_Research.md` zusammengefasst.
+- Beruecksichtigt wurden Herstellerkonzepte von WAGO, Phoenix Contact und Weidmueller, CAE-Konzepte von EPLAN, WSCAD und Zuken E3.series sowie der Normrahmen IEC 60947-7-1/-7-2/-7-3 und IEC 81346.
+- Kernergebnis: Mehrstockklemmen, PE, Schirm, Bruecken, Artikel/Zubehoer, Kabel/Ader und Klemmenleistenplan muessen als zusammenhaengende fachliche Struktur behandelt werden. Eine flache Liste einzelner QET-Klemmen reicht fuer MAM nicht.
+- Nach Nutzerkorrektur wurde die Zielhoehe bewusst flacher gesetzt: zuerst muss eine normale 1-Stock-Klemmenleiste aus vorhandenen Plan-Klemmen zuverlaessig erstellbar sein. Erst danach folgen read-only Terminal-Strip-Matrix, Coherent Multilevel Strip Assignment, persistente physische Klemmenidentitaet, Bulk-Erzeugung und grafischer Klemmenleistenplan.

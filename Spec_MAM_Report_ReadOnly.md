@@ -220,9 +220,14 @@ Ziel:
 Minimalfelder:
 
 - `strip_installation`, `strip_location`, `strip_name`, `strip_uuid`
-- `physical_index`, `level`, `level_count`
+- `physical_terminal_key`, `physical_index`, `level`, `level_count`
 - `terminal_label`, `terminal_uuid`, `terminal_folio`
-- `terminal_xref`, `terminal_name`, `conductor`
+- `terminal_xref`, `terminal_name`, `terminal_type`, `terminal_function`
+- `terminal_manufacturer`, `terminal_designation`, `terminal_description`, `terminal_led`, `terminal_is_multilevel`
+- `conductor`
+- `connection_count`, `connected_terminals`, `connected_conductor_uuids`, `connected_conductors`
+- `connected_cables`, `connected_wire_colors`, `connected_wire_sections`, `connected_conductor_functions`
+- `counterpart_elements`, `counterpart_element_uuids`, `counterpart_terminals`, `counterpart_folios`
 - `bridge_uuid`, `bridge_color`
 - `status`, `warnings`
 
@@ -230,6 +235,11 @@ Source-of-truth-Grenze:
 
 - Die Daten stammen aus `QETProject::terminalStrip()` und den vorhandenen `TerminalStrip`-/`PhysicalTerminal`-/`RealTerminal`-/`TerminalStripBridge`-Objekten.
 - `conductor` ist nur der erste von `RealTerminal::conductor()` beobachtete Leitertext und noch kein Kabel-/Adermodell.
+- `physical_terminal_key` ist ein stabiler Export-Schluessel aus `strip_uuid` und physischer Reihenfolge. Die interne `PhysicalTerminal::uuid()` wird nicht exportiert, weil sie aktuell nicht als persistiertes Projektfeld vorliegt.
+- Mehrstockklemmen werden nicht flachgezogen: `level` und `level_count` bleiben die vorhandene `PhysicalTerminal`-/`RealTerminal`-Ebene, `terminal_is_multilevel` markiert nur `level_count > 1`.
+- Hersteller-/Artikeldaten stammen ausschliesslich aus vorhandenen `Element::elementInformations()`-Feldern des Klemmen-Elements; `terminal_led` stammt aus der vorhandenen Terminal-ElementData.
+- Die `connected_*`- und `counterpart_*`-Felder sind direkte Leiter-Endpunktbeobachtungen am geladenen Terminal-Element. Sie folgen nicht der Potentialgruppe und behaupten keine Terminal-Strip- oder Potential-Wahrheit.
+- Kabel-/Aderhinweise werden nur aus vorhandenen `ConductorProperties` gelesen: `cable`, `conductor_color`, `conductor_section` und `function`. PE ist nur indirekt als vorhandener `terminal_type=ground` beobachtbar; ein SH-/Schirm-Merkmal existiert im Modell nicht und wird deshalb nicht erfunden.
 - Klemmenleisten bleiben getrennt von `mam-terminal-potential`; eine Klemme in einer Leiste ist nicht automatisch eine elektrische Potentialentscheidung.
 
 Bewusst nicht enthalten:
