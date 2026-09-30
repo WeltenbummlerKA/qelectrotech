@@ -93,6 +93,16 @@ private slots:
 				QStringLiteral("terminal_description"),
 				QStringLiteral("terminal_led"),
 				QStringLiteral("terminal_is_multilevel"),
+				QStringLiteral("terminal_connection_point_count"),
+				QStringLiteral("terminal_connection_points"),
+				QStringLiteral("connection_side_count"),
+				QStringLiteral("connection_sides"),
+				QStringLiteral("connection_side_conductor_uuids"),
+				QStringLiteral("connection_side_conductors"),
+				QStringLiteral("connection_side_counterpart_elements"),
+				QStringLiteral("connection_side_counterpart_element_uuids"),
+				QStringLiteral("connection_side_counterpart_terminals"),
+				QStringLiteral("connection_side_counterpart_folios"),
 				QStringLiteral("conductor"),
 				QStringLiteral("connection_count"),
 				QStringLiteral("connected_terminals"),
@@ -141,12 +151,10 @@ private slots:
 			QCOMPARE(row.value(QStringLiteral("terminal_type")), QStringLiteral("generic"));
 			QCOMPARE(row.value(QStringLiteral("terminal_function")), QStringLiteral("generic"));
 			QCOMPARE(row.value(QStringLiteral("terminal_is_multilevel")), QStringLiteral("false"));
-			QCOMPARE(row.value(QStringLiteral("connection_count")), QStringLiteral("1"));
-			QCOMPARE(row.value(QStringLiteral("connected_terminals")), QStringLiteral("top"));
-			QCOMPARE(row.value(QStringLiteral("connected_cables")), QStringLiteral("CABLE-A"));
-			QCOMPARE(row.value(QStringLiteral("connected_wire_colors")), QStringLiteral("BK"));
-			QCOMPARE(row.value(QStringLiteral("connected_wire_sections")), QStringLiteral("1.5"));
-			QCOMPARE(row.value(QStringLiteral("connected_conductor_functions")), QStringLiteral("CTRL"));
+			QCOMPARE(row.value(QStringLiteral("terminal_connection_point_count")), QStringLiteral("3"));
+			QCOMPARE(row.value(QStringLiteral("terminal_connection_points")), QStringLiteral("bottom | side | top"));
+			QCOMPARE(row.value(QStringLiteral("connection_side_count")), QStringLiteral("3"));
+			QCOMPARE(row.value(QStringLiteral("connection_sides")), QStringLiteral("bottom | side | top"));
 			QCOMPARE(row.value(QStringLiteral("counterpart_folios")), QStringLiteral("1"));
 			QCOMPARE(row.value(QStringLiteral("bridge_uuid")), QStringLiteral("cccccccc-cccc-4ccc-8ccc-cccccccccccc"));
 			QCOMPARE(row.value(QStringLiteral("bridge_color")), QStringLiteral("#ff8800"));
@@ -161,11 +169,23 @@ private slots:
 		QCOMPARE(first.value(QStringLiteral("terminal_description")), QStringLiteral("1mm2 2L terminal block"));
 		QCOMPARE(first.value(QStringLiteral("terminal_led")), QStringLiteral("true"));
 		QCOMPARE(first.value(QStringLiteral("conductor")), QStringLiteral("XT1-W1"));
-		QCOMPARE(first.value(QStringLiteral("connected_conductor_uuids")), QStringLiteral("dddddddd-dddd-4ddd-8ddd-dddddddddd01"));
-		QCOMPARE(first.value(QStringLiteral("connected_conductors")), QStringLiteral("XT1-W1"));
-		QCOMPARE(first.value(QStringLiteral("counterpart_elements")), QStringLiteral("v2_no_contact"));
-		QCOMPARE(first.value(QStringLiteral("counterpart_element_uuids")), QStringLiteral("15e1997c-4eb6-50df-8629-22efc1524f2f"));
-		QCOMPARE(first.value(QStringLiteral("counterpart_terminals")), QStringLiteral("bottom"));
+		QCOMPARE(first.value(QStringLiteral("connection_count")), QStringLiteral("2"));
+		QCOMPARE(first.value(QStringLiteral("connected_terminals")), QStringLiteral("bottom | top"));
+		QCOMPARE(first.value(QStringLiteral("connected_cables")), QStringLiteral("CABLE-B | CABLE-A"));
+		QCOMPARE(first.value(QStringLiteral("connected_wire_colors")), QStringLiteral("BU | BK"));
+		QCOMPARE(first.value(QStringLiteral("connected_wire_sections")), QStringLiteral("2.5 | 1.5"));
+		QCOMPARE(first.value(QStringLiteral("connected_conductor_functions")), QStringLiteral("RET | CTRL"));
+		QCOMPARE(first.value(QStringLiteral("connected_conductor_uuids")), QStringLiteral("dddddddd-dddd-4ddd-8ddd-dddddddddd03 | dddddddd-dddd-4ddd-8ddd-dddddddddd01"));
+		QCOMPARE(first.value(QStringLiteral("connected_conductors")), QStringLiteral("XT1-W2 | XT1-W1"));
+		QCOMPARE(first.value(QStringLiteral("counterpart_elements")), QStringLiteral("v2_busstub_n | v2_no_contact"));
+		QCOMPARE(first.value(QStringLiteral("counterpart_element_uuids")), QStringLiteral("dc1e8bdf-ce98-5f8e-8e72-8cbe654d0062 | 15e1997c-4eb6-50df-8629-22efc1524f2f"));
+		QCOMPARE(first.value(QStringLiteral("counterpart_terminals")), QStringLiteral("tap | bottom"));
+		QCOMPARE(first.value(QStringLiteral("connection_side_conductor_uuids")), QStringLiteral("dddddddd-dddd-4ddd-8ddd-dddddddddd03 |  | dddddddd-dddd-4ddd-8ddd-dddddddddd01"));
+		QCOMPARE(first.value(QStringLiteral("connection_side_conductors")), QStringLiteral("XT1-W2 |  | XT1-W1"));
+		QCOMPARE(first.value(QStringLiteral("connection_side_counterpart_elements")), QStringLiteral("v2_busstub_n |  | v2_no_contact"));
+		QCOMPARE(first.value(QStringLiteral("connection_side_counterpart_element_uuids")), QStringLiteral("dc1e8bdf-ce98-5f8e-8e72-8cbe654d0062 |  | 15e1997c-4eb6-50df-8629-22efc1524f2f"));
+		QCOMPARE(first.value(QStringLiteral("connection_side_counterpart_terminals")), QStringLiteral("tap |  | bottom"));
+		QCOMPARE(first.value(QStringLiteral("connection_side_counterpart_folios")), QStringLiteral("1 |  | 1"));
 		QCOMPARE(second.value(QStringLiteral("physical_terminal_key")), QStringLiteral("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb:2"));
 		QCOMPARE(second.value(QStringLiteral("physical_index")), QStringLiteral("2"));
 		QCOMPARE(second.value(QStringLiteral("terminal_manufacturer")), QString());
@@ -173,8 +193,14 @@ private slots:
 		QCOMPARE(second.value(QStringLiteral("terminal_description")), QString());
 		QCOMPARE(second.value(QStringLiteral("terminal_led")), QStringLiteral("false"));
 		QCOMPARE(second.value(QStringLiteral("conductor")), QStringLiteral("XT2-W1"));
+		QCOMPARE(second.value(QStringLiteral("connection_count")), QStringLiteral("1"));
+		QCOMPARE(second.value(QStringLiteral("connected_terminals")), QStringLiteral("top"));
 		QCOMPARE(second.value(QStringLiteral("connected_conductor_uuids")), QStringLiteral("dddddddd-dddd-4ddd-8ddd-dddddddddd02"));
 		QCOMPARE(second.value(QStringLiteral("connected_conductors")), QStringLiteral("XT2-W1"));
+		QCOMPARE(second.value(QStringLiteral("connected_cables")), QStringLiteral("CABLE-A"));
+		QCOMPARE(second.value(QStringLiteral("connected_wire_colors")), QStringLiteral("BK"));
+		QCOMPARE(second.value(QStringLiteral("connected_wire_sections")), QStringLiteral("1.5"));
+		QCOMPARE(second.value(QStringLiteral("connected_conductor_functions")), QStringLiteral("CTRL"));
 		QCOMPARE(second.value(QStringLiteral("counterpart_elements")), QStringLiteral("v2_busstub_n"));
 		QCOMPARE(second.value(QStringLiteral("counterpart_element_uuids")), QStringLiteral("dc1e8bdf-ce98-5f8e-8e72-8cbe654d0062"));
 		QCOMPARE(second.value(QStringLiteral("counterpart_terminals")), QStringLiteral("tap"));
@@ -187,6 +213,10 @@ private slots:
 			QCOMPARE(row.value(QStringLiteral("terminal_manufacturer")), QStringLiteral("Phoenix Contact"));
 			QCOMPARE(row.value(QStringLiteral("terminal_designation")), QStringLiteral("PT 2,5-2L"));
 			QCOMPARE(row.value(QStringLiteral("terminal_led")), QStringLiteral("false"));
+			QCOMPARE(row.value(QStringLiteral("terminal_connection_point_count")), QStringLiteral("3"));
+			QCOMPARE(row.value(QStringLiteral("terminal_connection_points")), QStringLiteral("bottom | side | top"));
+			QCOMPARE(row.value(QStringLiteral("connection_side_count")), QStringLiteral("3"));
+			QCOMPARE(row.value(QStringLiteral("connection_sides")), QStringLiteral("bottom | side | top"));
 			QCOMPARE(row.value(QStringLiteral("connection_count")), QStringLiteral("0"));
 			QCOMPARE(row.value(QStringLiteral("connected_terminals")), QString());
 			QCOMPARE(row.value(QStringLiteral("bridge_uuid")), QString());

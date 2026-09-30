@@ -1,5 +1,26 @@
 # Progress
 
+## 2026-09-30 - MAM Terminal Strip Plain 10-Terminal Slice
+
+Completed:
+- Reworked `examples/MAM_Klemmenleiste_X5_1-10_Assignment_Source.qet` to the deliberately minimal approach: one visible terminal strip row `-X5` with 10 feed-through terminal points placed side by side.
+- Removed the reference-style overlay, cable text, potential labels, bridges, continuation arrows, and all visible current-path geometry from the example.
+- Kept the 10 synthetic terminal elements as assignment/export carriers behind the visible row; only the strip designation and terminal numbers 1-10 are visible.
+
+User review / correction:
+- This slice is not accepted as a standard CAE implementation. It currently uses a workaround: hidden terminal elements plus a separate visible row element.
+- Standard CAE behavior expected by the user: a terminal has a separate common terminal-strip BMK, e.g. `-X5`, and a separate terminal number, e.g. `11`. The common BMK must be used to group terminals into one strip and should be displayed once for the strip, while each terminal displays only its terminal number in the schematic view.
+- The current assignment service instead recognizes labels in the combined text form `<prefix>:<number>` such as `-X5:11`. This is useful as a temporary technical bridge but is not the desired MAM Fachmodell.
+- Adding an 11th terminal with BMK `-X5` and terminal number `11` would not currently cause QET to automatically hide repeated `-X5` on the individual terminal or derive the visible strip row. That CAE behavior remains to be implemented.
+
+Verification:
+- `--assign-terminal-strip examples\MAM_Klemmenleiste_X5_1-10_Assignment_Source.qet build\verify-assignment\X5_1-10_assigned_plain.qet -X5` reports `created=true, matched_free=10, added=10, strip_terminals=10, reordered=false`.
+- `--export-mam-terminal-strip build\verify-assignment\X5_1-10_assigned_plain.qet build\verify-assignment\X5_1-10_assigned_plain.csv` reports 10 terminals and 0 warning rows.
+- `--export-png examples\MAM_Klemmenleiste_X5_1-10_Assignment_Source.qet build\verify-assignment\X5_plain_10_terminals` produced the simplified render.
+
+Next required correction:
+- Replace the combined-label assignment model with a CAE-style terminal identity model or projection: strip/device BMK `-X5` and terminal number `1..n` are separate facts; grouping uses the shared strip BMK; rendering shows the common BMK once and terminal numbers at the terminal points.
+
 ## 2026-09-21 - CAE Reference Analysis Phase 1
 
 Completed:
@@ -213,6 +234,30 @@ Completed:
 Next:
 - Run the focused test once a local build/test binary is available.
 - After the flat assignment path is reliable, revisit read-only matrix projection and then multilevel assignment.
+
+### 2026-09-30 - Simple Terminal Strip Assignment Example
+
+Completed:
+- Added `examples/MAM_Klemmenleiste_Einfach_Assignment_Source.qet` as the first small source example for a normal single-level terminal strip assignment workflow.
+- The example intentionally contains free schematic terminals labelled out of order as `-X1:10`, `-X1:2`, `-X1:1`, and `-X1:3`, with no pre-existing `<terminal_strips>` section.
+- Rebuilt and deployed the Windows verify binary under `build/windows-msvc-verify`, including `sqlite3.dll` and Qt runtime deployment, so CLI execution no longer fails on missing `sqlite3.dll`.
+- Verified `qelectrotech.exe --version` returns `0.200.1-dev`.
+- Ran `--assign-terminal-strip examples/MAM_Klemmenleiste_Einfach_Assignment_Source.qet build/verify-assignment/assignment_output.qet -X1`; the CLI reported `created=true`, `matched_free=4`, `added=4`, `strip_terminals=4`.
+- XML inspection of the generated output confirmed exactly one strip and natural order `-X1:1`, `-X1:2`, `-X1:3`, `-X1:10`.
+- `--export-mam-terminal-strip` on the generated output exported 4 `-X1` rows with 0 warning rows.
+
+Repository boundary:
+- Commit only the source-before-assignment example. Generated assignment outputs and CSV exports stay under `build/` and are not versioned.
+
+### 2026-09-30 - Complete Simple Terminal Strip X5 Example
+
+Completed:
+- Added `examples/MAM_Klemmenleiste_X5_1-10_Assignment_Source.qet` as a complete normal single-level source example for terminal strip `-X5`.
+- The source project contains ten free schematic feed-through terminal elements labelled internally as `-X5:1` through `-X5:10`, visibly numbered 1-10 with visible strip designation `-X5`, and no pre-existing terminal-strip assignment.
+- Ran `--assign-terminal-strip examples/MAM_Klemmenleiste_X5_1-10_Assignment_Source.qet build/verify-assignment/X5_1-10_assigned.qet -X5`; the CLI reported `created=true`, `matched_free=10`, `added=10`, `strip_terminals=10`.
+- XML inspection of the generated output confirmed exactly one strip with 10 physical terminals in natural order `-X5:1` through `-X5:10`.
+- `--export-mam-terminal-strip` on the generated output exported 10 `-X5` rows with 0 warning rows.
+- Corrected the sample after review so the terminals are not generic blocks: exported rows now report `terminal_name=Klemme (Durchgang)`, `terminal_type=sectional`, manufacturer `WAGO`, designation `2000-1201`, and description `Durchgangsklemme`.
 
 ## Completed
 - Local repository inspected non-destructively on 2026-09-21.
@@ -732,3 +777,15 @@ Visually verify coil mirrors for the rest of the Eaton contactor/relay combinati
 - Beruecksichtigt wurden Herstellerkonzepte von WAGO, Phoenix Contact und Weidmueller, CAE-Konzepte von EPLAN, WSCAD und Zuken E3.series sowie der Normrahmen IEC 60947-7-1/-7-2/-7-3 und IEC 81346.
 - Kernergebnis: Mehrstockklemmen, PE, Schirm, Bruecken, Artikel/Zubehoer, Kabel/Ader und Klemmenleistenplan muessen als zusammenhaengende fachliche Struktur behandelt werden. Eine flache Liste einzelner QET-Klemmen reicht fuer MAM nicht.
 - Nach Nutzerkorrektur wurde die Zielhoehe bewusst flacher gesetzt: zuerst muss eine normale 1-Stock-Klemmenleiste aus vorhandenen Plan-Klemmen zuverlaessig erstellbar sein. Erst danach folgen read-only Terminal-Strip-Matrix, Coherent Multilevel Strip Assignment, persistente physische Klemmenidentitaet, Bulk-Erzeugung und grafischer Klemmenleistenplan.
+
+### 2026-09-30 - Klemmenleisten Anschlusspositionen im Export
+- `--export-mam-terminal-strip` gibt normale Durchgangsklemmen nun nicht mehr nur als Strip-/RealTerminal-Zeile aus, sondern zusaetzlich mit strukturierten vorhandenen Anschlusspositionen des platzierten QET-Terminalelements.
+- Neue read-only Felder: `terminal_connection_point_count` und `terminal_connection_points`. Die Werte werden aus den vorhandenen `Element::terminals()`/`Terminal::name()` abgeleitet; es gibt keine UI-, Rendering-, Bruecken- oder Mehrstock-Persistenzaenderung.
+- Damit bleiben auch noch nicht verdrahtete 1-Stock-Klemmen nachvollziehbar: die X5-Assignment-Ausgabe zeigt bei `connection_count=0` weiterhin `terminal_connection_point_count=2` und `terminal_connection_points=in | out`.
+- Verifikation Windows: MSVC-App-Rebuild erfolgreich; Export der synthetischen Terminal-Strip-Fixture schreibt `bottom | side | top`; X5-Assignment plus Export schreibt 10 Zeilen mit `in | out` und 0 Warnungen.
+
+### 2026-09-30 - X5-Schaltplan-Klemmleiste referenznaeher umgesetzt
+- Die verworfene X5-Kaestchenreihe in `examples/MAM_Klemmenleiste_X5_1-10_Assignment_Source.qet` wurde durch eine Schaltplan-Klemmleiste mit offenen Anschluss-/Durchgangspunkt-Symbolen ersetzt.
+- Sichtbar sind jetzt die Klemmleistenbezeichnung `-X5`, zehn Klemmenpositionen `1` bis `10`, getrennte Potentialtexte `1L`, `1L0`, `1PE`, `2L`, `2L0`, `3L`, `3L0`, `4L`, `4L0`, `4PE` sowie getrennte Anschluss-/Adertexte unterhalb der Klemmen.
+- Die eingebettete Terminaldefinition `synthetic_terminal_block.elmt` ist weiterhin ein terminalfaehiges `link_type="terminal"`-Element, aber optisch kein Rechteckblock mehr: vertikale Durchgangslinie, Anschlusskreis, horizontale Potential-/Brueckenlinie und kleine Stufendarstellung.
+- Verifikation Windows: XML parse OK; `--assign-terminal-strip` findet `-X5` mit 10 Klemmen; `--export-mam-terminal-strip` exportiert 10 Zeilen mit `terminal_name=Klemme (Durchgang)`, `terminal_type=sectional`, `terminal_connection_points=in | out`, 0 Warnungen; PNG-Export liegt unter `build/verify-assignment/X5_source_png_refslice/`.

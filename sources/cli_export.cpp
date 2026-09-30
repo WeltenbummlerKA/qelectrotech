@@ -642,6 +642,23 @@ QString physicalTerminalKey(TerminalStrip *strip, int physical_index)
 		: QString();
 }
 
+QStringList terminalConnectionPoints(Element *element)
+{
+	QStringList names;
+	if (!element)
+		return names;
+
+	for (Terminal *terminal : element->terminals()) {
+		const QString name = terminalName(terminal);
+		if (!name.isEmpty())
+			names << name;
+	}
+
+	names.removeDuplicates();
+	std::sort(names.begin(), names.end());
+	return names;
+}
+
 struct TerminalStripConnectionRecord
 {
 	QString connected_terminal;
@@ -655,6 +672,17 @@ struct TerminalStripConnectionRecord
 	QString counterpart_element_uuid;
 	QString counterpart_terminal;
 	QString counterpart_folio;
+};
+
+struct TerminalStripConnectionSideRecord
+{
+	QString side;
+	QString conductor_uuids;
+	QString conductors;
+	QString counterpart_elements;
+	QString counterpart_element_uuids;
+	QString counterpart_terminals;
+	QString counterpart_folios;
 };
 
 template <typename Getter>
@@ -732,6 +760,84 @@ QVector<TerminalStripConnectionRecord> terminalStripConnectionEvidence(
 	});
 
 	return records;
+}
+
+QString joinedSideValues(const QStringList &values)
+{
+	return values.join(QStringLiteral(","));
+}
+
+QVector<TerminalStripConnectionSideRecord> terminalStripConnectionSideEvidence(
+		Element *element,
+		const QHash<Diagram *, int> &folios)
+{
+	QVector<TerminalStripConnectionSideRecord> records;
+	if (!element)
+		return records;
+
+	for (Terminal *terminal : element->terminals()) {
+		if (!terminal)
+			continue;
+
+		QStringList conductor_uuids;
+		QStringList conductors;
+		QStringList counterpart_elements;
+		QStringList counterpart_element_uuids;
+		QStringList counterpart_terminals;
+		QStringList counterpart_folios;
+
+		QSet<Conductor *> seen_conductors;
+		for (Conductor *conductor : terminal->conductors()) {
+			if (!conductor || seen_conductors.contains(conductor))
+				continue;
+			seen_conductors.insert(conductor);
+
+			Terminal *other_terminal = nullptr;
+			if (conductor->terminal1 == terminal)
+				other_terminal = conductor->terminal2;
+			else if (conductor->terminal2 == terminal)
+				other_terminal = conductor->terminal1;
+			else
+				continue;
+
+			Element *other_element = terminalElement(other_terminal);
+			conductor_uuids << uuidString(conductor->uuid());
+			conductors << conductor->properties().text;
+			counterpart_elements << (other_element ? elementLabel(other_element) : QString());
+			counterpart_element_uuids << (other_element ? uuidString(other_element->uuid()) : QString());
+			counterpart_terminals << terminalName(other_terminal);
+			counterpart_folios << (other_element && other_element->diagram()
+				? QString::number(folios.value(other_element->diagram(), 0))
+				: QString());
+		}
+
+		records.append({
+			terminalName(terminal),
+			joinedSideValues(conductor_uuids),
+			joinedSideValues(conductors),
+			joinedSideValues(counterpart_elements),
+			joinedSideValues(counterpart_element_uuids),
+			joinedSideValues(counterpart_terminals),
+			joinedSideValues(counterpart_folios)
+		});
+	}
+
+	std::sort(records.begin(), records.end(),
+			  [](const TerminalStripConnectionSideRecord &left,
+				 const TerminalStripConnectionSideRecord &right) {
+		return left.side < right.side;
+	});
+
+	return records;
+}
+
+template <typename Getter>
+QString joinedSideEvidence(const QVector<TerminalStripConnectionSideRecord> &records, Getter getter)
+{
+	QStringList values;
+	for (const TerminalStripConnectionSideRecord &record : records)
+		values << getter(record);
+	return values.join(QStringLiteral(" | "));
 }
 
 /// From-to wiring list: one row per conductor, each endpoint resolved to its
@@ -1026,6 +1132,13 @@ int exportMamTerminalStrip(QETProject &project, const QString &output)
 		"terminal_xref", "terminal_name", "terminal_type", "terminal_function",
 		"terminal_manufacturer", "terminal_designation", "terminal_description",
 		"terminal_led", "terminal_is_multilevel",
+		"terminal_connection_point_count", "terminal_connection_points",
+		"connection_side_count", "connection_sides",
+		"connection_side_conductor_uuids", "connection_side_conductors",
+		"connection_side_counterpart_elements",
+		"connection_side_counterpart_element_uuids",
+		"connection_side_counterpart_terminals",
+		"connection_side_counterpart_folios",
 		"conductor",
 		"connection_count", "connected_terminals",
 		"connected_conductor_uuids", "connected_conductors",
@@ -1056,6 +1169,9 @@ int exportMamTerminalStrip(QETProject &project, const QString &output)
 				QSharedPointer<TerminalStripBridge> bridge = real->bridge();
 				const QVector<TerminalStripConnectionRecord> connections =
 					terminalStripConnectionEvidence(element, folios);
+				const QStringList connection_points = terminalConnectionPoints(element);
+				const QVector<TerminalStripConnectionSideRecord> connection_sides =
+					terminalStripConnectionSideEvidence(element, folios);
 				QStringList row_warnings;
 				if (strip->name().isEmpty())
 					row_warnings << QStringLiteral("empty strip_name");
@@ -1093,6 +1209,30 @@ int exportMamTerminalStrip(QETProject &project, const QString &output)
 					elementInfoValue(element, QStringLiteral("description")),
 					real->isLed() ? QStringLiteral("true") : QStringLiteral("false"),
 					physical->levelCount() > 1 ? QStringLiteral("true") : QStringLiteral("false"),
+					QString::number(connection_points.size()),
+					connection_points.join(QStringLiteral(" | ")),
+					QString::number(connection_sides.size()),
+					joinedSideEvidence(connection_sides, [](const TerminalStripConnectionSideRecord &r) {
+						return r.side;
+					}),
+					joinedSideEvidence(connection_sides, [](const TerminalStripConnectionSideRecord &r) {
+						return r.conductor_uuids;
+					}),
+					joinedSideEvidence(connection_sides, [](const TerminalStripConnectionSideRecord &r) {
+						return r.conductors;
+					}),
+					joinedSideEvidence(connection_sides, [](const TerminalStripConnectionSideRecord &r) {
+						return r.counterpart_elements;
+					}),
+					joinedSideEvidence(connection_sides, [](const TerminalStripConnectionSideRecord &r) {
+						return r.counterpart_element_uuids;
+					}),
+					joinedSideEvidence(connection_sides, [](const TerminalStripConnectionSideRecord &r) {
+						return r.counterpart_terminals;
+					}),
+					joinedSideEvidence(connection_sides, [](const TerminalStripConnectionSideRecord &r) {
+						return r.counterpart_folios;
+					}),
 					real->conductor(),
 					QString::number(connections.size()),
 					joinedEvidence(connections, [](const TerminalStripConnectionRecord &r) {
