@@ -1,5 +1,28 @@
 # Progress
 
+## 2026-10-01 - Querverweis-Backbone Commit und offener Continuation-Befund
+
+Completed:
+- Committed and pushed the current cross-reference projection work on branch `mam/qet-projections-runtime-qa`.
+- Commit: `fa1be1be1` (`Implement MAM cross-reference projections`), pushed to `origin/mam/qet-projections-runtime-qa`.
+- The central read-only cross-reference projection now covers the implemented slices for contact references, PLC references, report/folio backreferences, terminal backreferences, and indirect cable-plan references.
+- Added `CableCoreCrossRefProjectionService` for indirect cable/core evidence. Cable/core references are treated as cable-plan references, not as direct schematic end-to-end cross-references.
+- Added/extended tests for `CrossReferenceProjectionService` and `--export-mam-cross-reference`.
+
+Verification status:
+- The pushed work was committed with `git diff --cached --check` clean.
+- Report/Folio and cross-reference tests were reported green when run directly with a corrected Windows/Qt runtime environment.
+- The local Windows/Qt test environment can still produce startup/runtime errors when Qt debug DLLs or platform plugins are missing from `PATH`; those errors are environment/startup failures, not accepted functional failures.
+- After push, the working tree only showed untracked `build/` output.
+
+Open continuation/potential finding:
+- Continuation-/Potentialpfeil chain references are not implemented yet.
+- Diagnosis found that current MAM continuation arrows are ordinary report-style elements with visible fields such as `potential`, `xref`, and optional `voltage`.
+- `xref` is presentation text only and must not be used as the fachliche relationship.
+- Current data does not contain an explicit chain identifier, sequence, pair/group id, or source/destination fachliche identity.
+- Exactly two matching continuation arrows can be projected safely as an unambiguous pair, but a true chain across more than two same-potential arrows would currently require guessing from potential name and page/position order.
+- Next required work: introduce or identify a real chain relationship fact, then implement `continuation_potential` projection with warnings for single, duplicate, same-direction, ambiguous, or unresolved cases.
+
 ## 2026-10-01 - Highest Priority CAE Roadmap Fixed
 
 Decision:
