@@ -1496,8 +1496,8 @@ int exportMamCrossReference(QETProject &project, const QString &output)
 
 	static const QStringList columns {
 		"kind", "source_service",
-		"source_role", "source_label", "source_uuid", "source_folio",
-		"target_role", "target_label", "target_uuid", "target_folio",
+		"source_role", "source_label", "source_uuid", "source_folio", "source_position",
+		"target_role", "target_label", "target_uuid", "target_folio", "target_position",
 		"relationship", "cardinality", "display_text", "reference_text",
 		"status", "warnings"
 	};
@@ -1520,12 +1520,14 @@ int exportMamCrossReference(QETProject &project, const QString &output)
 			reference.source_folio < 0
 				? QString()
 				: QString::number(reference.source_folio),
+			reference.source_position,
 			reference.target_role,
 			reference.target_label,
 			uuidString(reference.target_uuid),
 			reference.target_folio < 0
 				? QString()
 				: QString::number(reference.target_folio),
+			reference.target_position,
 			reference.relationship,
 			reference.cardinality,
 			reference.display_text,

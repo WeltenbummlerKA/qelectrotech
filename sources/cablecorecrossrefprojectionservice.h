@@ -9,14 +9,14 @@
 
 	QElectroTech is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
 	along with QElectroTech. If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef CROSSREFERENCEPROJECTIONSERVICE_H
-#define CROSSREFERENCEPROJECTIONSERVICE_H
+#ifndef CABLECORECROSSREFPROJECTIONSERVICE_H
+#define CABLECORECROSSREFPROJECTIONSERVICE_H
 
 #include <QList>
 #include <QString>
@@ -25,32 +25,36 @@
 
 class QETProject;
 
-struct CrossReferenceProjection
+struct CableCoreCrossRefProjection
 {
-	QString kind;
-	QString source_role;
-	QUuid source_uuid;
-	QString source_label;
+	QUuid conductor_uuid;
+	QString cable;
+	QString wire_number;
+	QString wire_color;
+	QString wire_section;
+	QString function;
+	QUuid source_element_uuid;
+	QString source_element_label;
+	QString source_terminal;
 	int source_folio = -1;
-	QString source_position;
-	QString target_role;
-	QUuid target_uuid;
-	QString target_label;
+	QString source_grid;
+	QString source_reference;
+	QUuid target_element_uuid;
+	QString target_element_label;
+	QString target_terminal;
 	int target_folio = -1;
-	QString target_position;
-	QString relationship;
-	QString cardinality;
+	QString target_grid;
+	QString target_reference;
 	QString display_text;
+	QString relationship;
 	QString reference_text;
-	QString status;
 	QStringList warnings;
-	QString source_service;
 };
 
-class CrossReferenceProjectionService
+class CableCoreCrossRefProjectionService
 {
 	public:
-		QList<CrossReferenceProjection> references(QETProject &project) const;
+		QList<CableCoreCrossRefProjection> references(QETProject &project) const;
 };
 
-#endif // CROSSREFERENCEPROJECTIONSERVICE_H
+#endif // CABLECORECROSSREFPROJECTIONSERVICE_H

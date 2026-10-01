@@ -124,6 +124,8 @@ set(QET_RES_FILES
 set(QET_SRC_FILES
   ${QET_DIR}/sources/cli_export.cpp
   ${QET_DIR}/sources/cli_export.h
+  ${QET_DIR}/sources/cablecorecrossrefprojectionservice.cpp
+  ${QET_DIR}/sources/cablecorecrossrefprojectionservice.h
   ${QET_DIR}/sources/contactcrossrefprojectionservice.cpp
   ${QET_DIR}/sources/contactcrossrefprojectionservice.h
   ${QET_DIR}/sources/crossreferenceprojectionservice.cpp

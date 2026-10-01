@@ -364,6 +364,16 @@ target_compile_definitions(tst_mam_contact_crossref_export PRIVATE
   "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
 
 add_executable(
+  tst_mam_cross_reference_export
+  tst_mam_cross_reference_export.cpp)
+add_test(NAME tst_mam_cross_reference_export COMMAND tst_mam_cross_reference_export)
+add_dependencies(tst_mam_cross_reference_export qelectrotech)
+target_include_directories(tst_mam_cross_reference_export PRIVATE ${QET_DIR}/sources)
+target_link_libraries(tst_mam_cross_reference_export PRIVATE Qt::Test Qt::Core)
+target_compile_definitions(tst_mam_cross_reference_export PRIVATE
+  "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
+
+add_executable(
   tst_mam_terminal_potential_export
   tst_mam_terminal_potential_export.cpp)
 add_test(NAME tst_mam_terminal_potential_export COMMAND tst_mam_terminal_potential_export)
@@ -465,3 +475,7 @@ add_qet_project_load_qtest(
 add_qet_project_load_qtest(
   tst_plcioprojectionservice
   tst_plcioprojectionservice.cpp)
+
+add_qet_project_load_qtest(
+  tst_crossreferenceprojectionservice
+  tst_crossreferenceprojectionservice.cpp)
