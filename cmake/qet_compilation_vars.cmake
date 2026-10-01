@@ -126,6 +126,8 @@ set(QET_SRC_FILES
   ${QET_DIR}/sources/cli_export.h
   ${QET_DIR}/sources/contactcrossrefprojectionservice.cpp
   ${QET_DIR}/sources/contactcrossrefprojectionservice.h
+  ${QET_DIR}/sources/crossreferenceprojectionservice.cpp
+  ${QET_DIR}/sources/crossreferenceprojectionservice.h
   ${QET_DIR}/sources/plcioprojectionservice.cpp
   ${QET_DIR}/sources/plcioprojectionservice.h
   ${QET_DIR}/sources/logging/crashhandler.cpp

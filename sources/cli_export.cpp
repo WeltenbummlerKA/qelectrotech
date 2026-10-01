@@ -22,6 +22,7 @@
 #include "conductornumexport.h"
 #include "conductorproperties.h"
 #include "contactcrossrefprojectionservice.h"
+#include "crossreferenceprojectionservice.h"
 #include "dataBase/projectdatabase.h"
 #include "diagram.h"
 #include "diagramcontext.h"
@@ -84,6 +85,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-wiring", "wiring"},
 		{"--export-nets", "nets"},
 		{"--export-links", "links"},
+		{"--export-mam-cross-reference", "mam-cross-reference"},
 		{"--export-mam-contact-crossref", "mam-contact-crossref"},
 		{"--export-mam-plc-io", "mam-plc-io"},
 		{"--export-mam-summary", "mam-summary"},
@@ -1484,6 +1486,74 @@ int exportMamPlcIo(QETProject &project, const QString &output)
 	return 0;
 }
 
+/// First MAM cross-reference backbone report. It deliberately starts as a
+/// read-only union of existing projection islands and does not invent joins
+/// across domains that do not have agreed ownership yet.
+int exportMamCrossReference(QETProject &project, const QString &output)
+{
+	CrossReferenceProjectionService service;
+	const QList<CrossReferenceProjection> references = service.references(project);
+
+	static const QStringList columns {
+		"kind", "source_service",
+		"source_role", "source_label", "source_uuid", "source_folio",
+		"target_role", "target_label", "target_uuid", "target_folio",
+		"relationship", "cardinality", "display_text", "reference_text",
+		"status", "warnings"
+	};
+
+	QString csv = columns.join(";") % "\n";
+	int warnings = 0;
+	for (const CrossReferenceProjection &reference : references) {
+		const QString status = reference.warnings.isEmpty()
+			? QStringLiteral("OK")
+			: QStringLiteral("WARNING");
+		if (!reference.warnings.isEmpty())
+			++warnings;
+
+		const QStringList values {
+			reference.kind,
+			reference.source_service,
+			reference.source_role,
+			reference.source_label,
+			uuidString(reference.source_uuid),
+			reference.source_folio < 0
+				? QString()
+				: QString::number(reference.source_folio),
+			reference.target_role,
+			reference.target_label,
+			uuidString(reference.target_uuid),
+			reference.target_folio < 0
+				? QString()
+				: QString::number(reference.target_folio),
+			reference.relationship,
+			reference.cardinality,
+			reference.display_text,
+			reference.reference_text,
+			status,
+			reference.warnings.join(QStringLiteral(" | "))
+		};
+
+		QStringList escaped;
+		for (const QString &value : values)
+			escaped << csvField(value);
+		csv += escaped.join(QLatin1Char(';')) % "\n";
+	}
+
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << csv;
+	file.close();
+	out << "Exported " << references.size()
+		<< " MAM cross-reference row(s), "
+		<< warnings << " warning row(s) -> " << output << "\n";
+	return 0;
+}
+
 /// First combined MAM working list. It deliberately keeps PLC,
 /// Contact/CrossRef, and Terminal/Potential rows separate instead of inventing
 /// joins across domains that do not have one agreed source of truth yet.
@@ -1868,6 +1938,8 @@ int run(const QStringList &args)
 		return exportNets(project, output);
 	if (format == "links")
 		return exportLinks(project, output);
+	if (format == "mam-cross-reference")
+		return exportMamCrossReference(project, output);
 	if (format == "mam-contact-crossref")
 		return exportMamContactCrossRef(project, output);
 	if (format == "mam-plc-io")
