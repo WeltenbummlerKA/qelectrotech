@@ -1,8 +1,27 @@
 # Progress
 
+## 2026-10-01 - Highest Priority CAE Roadmap Fixed
+
+Decision:
+- The user and Codex aligned on the implementation priority after the terminal-strip, Strompfad, PLC module, and cross-reference analyses.
+- This roadmap now has highest priority over older opportunistic slice ideas.
+
+Priority order:
+1. Querverweise first: build the read-only cross-reference Fachmodell/projection backbone (`CrossReferenceProjectionService` / `--export-mam-cross-reference`) before rendering or write-back work.
+2. Strompfade / Potentialfortsetzungen second: derive point-to-point, chain, star, and auto-by-potential/signal continuation references from that backbone.
+3. Klemmenleisten third: correct the Fachmodell so strip BMK and terminal number are separate facts; grouping uses shared BMK; rendering shows the BMK once and terminal numbers at terminal points.
+4. Kontaktspiegel fourth: stabilize contact groups, free/occupied slots, early/late contact semantics, terminals, and target references on top of the general cross-reference projection.
+5. SPS/PLC modules fifth: add read-only station/rack/slot/module/channel/connection-point/representation projections and diagnostics before UI sync or vendor-specific address rules.
+6. Reports/list outputs after the foundations: generate MAM Arbeitsliste, Klemmenplan, I/O-Liste, Verbindungs-/Potentialliste, and navigation backreferences from stable projections.
+
+Guardrails:
+- No broad UI/rendering rewrite, write-back, XML schema, Device/Core migration, or vendor-specific PLC address implementation before the cross-reference projection backbone exists.
+- Visual work may continue only as clearly marked prototype work or as a consumer of read-only projected facts.
+
 ## 2026-09-30 - MAM Terminal Strip Plain 10-Terminal Slice
 
 Completed:
+- Added `Analysis_Terminal_Strip_CAE_Model.md` as the focused analysis report for norm-oriented and CAE-standard terminal-strip formation.
 - Reworked `examples/MAM_Klemmenleiste_X5_1-10_Assignment_Source.qet` to the deliberately minimal approach: one visible terminal strip row `-X5` with 10 feed-through terminal points placed side by side.
 - Removed the reference-style overlay, cable text, potential labels, bridges, continuation arrows, and all visible current-path geometry from the example.
 - Kept the 10 synthetic terminal elements as assignment/export carriers behind the visible row; only the strip designation and terminal numbers 1-10 are visible.
@@ -20,6 +39,48 @@ Verification:
 
 Next required correction:
 - Replace the combined-label assignment model with a CAE-style terminal identity model or projection: strip/device BMK `-X5` and terminal number `1..n` are separate facts; grouping uses the shared strip BMK; rendering shows the common BMK once and terminal numbers at the terminal points.
+
+## 2026-10-01 - Strompfade / Potentialfortsetzungen CAE Analysis
+
+Completed:
+- Added `Analysis_Current_Paths_Continuation_Arrows_CAE_Model.md` as the focused analysis report for norm-oriented and CAE-standard Strompfad, Potentialfortsetzung, continuation-arrow, and cross-reference behavior.
+- Used two parallel research agents:
+  - Norm/documentation agent: checked IEC 61082, ISO/IEC 81346, IEC 61175, and QET's existing conductor/folio-reference concepts.
+  - CAE-system agent: checked public EPLAN, WSCAD, Zuken E3.series, SEE Electrical, and AutoCAD Electrical behavior for interruption points, signal arrows, line-related references, and sheet references.
+- Main conclusion: Strompfadpfeile are not the electrical connection and not the potential identity. They are visible continuation/reference objects derived from a fachliches model of potential/signal, net, conductor segment, pin, continuation object, and calculated cross-reference.
+
+Accepted direction:
+- Keep potential name, signal name, wire/conductor number, cable/core, page/grid/path reference, arrow direction, and visible xref text as separate facts.
+- Treat the existing `potential`, `xref`, and `voltage` pilot arrow fields as presentation prototypes only, not accepted CAE Fachlogik.
+- Next implementation must begin with a read-only Continuation/CrossReference projection and diagnostics before any write-back or UI synchronization.
+
+## 2026-10-01 - SPS / PLC Module CAE Analysis
+
+Completed:
+- Added `Analysis_PLC_Modules_CAE_Model.md` as the focused analysis report for norm-oriented and CAE-standard SPS-/PLC module behavior.
+- Used two parallel research agents:
+  - Norm/documentation agent: checked IEC 61131, IEC/ISO 81346, IEC 61082, IEC 61175, IEC 60617, and QElectroTech's current element/terminal model.
+  - CAE-system agent: checked public EPLAN Electric P8, WSCAD PLC Manager, Zuken E3.series/PLCBridge, and SEE Electrical/SEE Electrical Expert behavior for PLC cards, channels, addresses, symbolic addresses, function texts, pins, cross-references, reports, and PLC data exchange.
+- Main conclusion: SPS/PLC modules are not drawn tables. They are fachliche PLC station/rack/slot/module/channel/connection-point objects with addresses, symbolic addresses, function texts, signals, potentials, and multiple generated representations.
+
+Accepted direction:
+- Keep PLC station/controller, rack/bus node, slot, module/card, channel, connection point/pin, PLC address, symbolic address, function text, signal, potential/net, and representation as separate facts.
+- Treat PLC address as an attribute, not the only channel identity. Overview rows and distributed schematic PLC symbols must reference the same channel/connection-point object.
+- Keep the existing `PlcIoProjectionService` as a read-only transition bridge over master IO rows, `group_index`, and slave-side `plc_*` display-copy evidence. It is not the final PLC device/rack/module/channel core model.
+- Next implementation must begin with a read-only PLC module/channel/connection-point/representation projection and diagnostics for stale/conflicting display copies before write-back, UI synchronization, schema migration, or vendor-specific address validation.
+
+## 2026-10-01 - Querverweise CAE Analysis
+
+Completed:
+- Added `Analysis_Cross_References_CAE_Model.md` as the focused analysis report for norm-oriented and CAE-standard cross-reference behavior.
+- Researched public EPLAN, Zuken E3.series, AutoCAD Electrical, WSCAD, IEC 61082, ISO/IEC 81346, and IEC 61175 evidence.
+- Re-read current QET/MAM cross-reference implementation evidence: `CrossRefItem`, `XRefProperties`, `ContactCrossRefProjectionService`, `PlcIoProjectionService`, terminal-strip `genericXref()` usage, and existing pilot continuation-arrow fields.
+- Main conclusion: Querverweise are fachliche relationships between objects/representations; visible reference text is only the resolved display. Device, contact, continuation, pair, star, PLC, terminal, cable/core, and report references must remain semantically distinct.
+
+Accepted direction:
+- Keep source object, target object/target set, relationship kind, cardinality, reference designation, page/folio, grid, path/current-path number, signal, potential, wire number, display format, status, and warnings as separate facts.
+- Treat existing `CrossRefItem` rendering and `XRefProperties` formulas as presentation/configuration evidence, not as the final MAM cross-reference ownership model.
+- Next implementation must begin with a read-only `CrossReferenceProjectionService` / `--export-mam-cross-reference` surface that gathers current islands and reports missing, ambiguous, stale, duplicate, conflicting, and unresolved references before any rendering rewrite or write-back.
 
 ## 2026-09-21 - CAE Reference Analysis Phase 1
 

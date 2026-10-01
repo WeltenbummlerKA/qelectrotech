@@ -22,6 +22,18 @@ Architecture principles:
 - MAM workflow first: preserve deterministic behavior and avoid accidental data loss, but do not keep historical QET defaults when they block the intended MAM CAE workflow.
 - Separation: runtime packaging, GUI smoke, signing, and installation are their own track and must not be mixed with PLC/CAE Fachlogik.
 
+Highest-priority CAE roadmap as of 2026-10-01:
+1. Cross-reference Fachmodell read-only first: implement a `CrossReferenceProjectionService` / `--export-mam-cross-reference` surface over the current islands before any rendering rewrite. This is the navigation and consistency backbone for contacts, PLC, terminal strips, current paths, potential continuations, cables/cores, and reports.
+2. Strompfade / Potentialfortsetzungen next: define and project point-to-point, chain, star, and auto-by-potential/signal continuation behavior from the cross-reference backbone.
+3. Klemmenleisten fachlich correct: separate strip BMK (for example `-X5`) from terminal number (`1..n`), derive grouping from the shared strip BMK, and render the strip designation once while terminal points show only terminal numbers.
+4. Kontaktspiegel stabilize: deepen contact group, occupied/free contact slot, early/late contact, terminal label, and target-position behavior using the general cross-reference projection.
+5. SPS/PLC modules after the above foundation: add read-only station/rack/slot/module/channel/connection-point/representation projections and diagnostics before UI sync or vendor-specific address rules.
+6. Reports/list outputs last in this sequence: merge the stable projections into generated MAM views such as Arbeitsliste, Klemmenplan, I/O-Liste, Verbindungs-/Potentialliste, and navigation backreferences.
+
+Priority rule:
+- Do not start broad UI/rendering, write-back, XML schema, Device/Core migration, or vendor-specific PLC address work before the cross-reference projection backbone exists and has diagnostics.
+- Visual improvements are allowed only when they consume the read-only facts or stay clearly marked as prototypes.
+
 Next concrete slices:
 - Confirm the private branch policy for `mam/qet-projections-runtime-qa`: continue dedicated branch or promote a private MAM mainline.
 - Add the smallest next PLC warning slice only if it can stay projection-derived; stale slave `plc_*` copy evidence and slave-terminal-count evidence are now covered.
@@ -63,6 +75,7 @@ Open decisions:
 - Whether future MAM report/export data should read live graph, derived SQLite, XML-derived exporters, or a new tested projection layer.
 
 Terminal-strip decision evidence:
+- `Analysis_Terminal_Strip_CAE_Model.md` is the binding analysis note for how terminal strips must be formed in the MAM fork according to norm-oriented CAE principles and common CAE behavior.
 - `QETProject` owns terminal strips as project-level objects and serializes them below `<terminal_strips>`.
 - `TerminalStrip` owns strip data, ordered physical terminals, real terminal membership, and bridge objects.
 - `RealTerminal` persists membership by placed terminal element UUID, and `TerminalStrip::fromXml()` resolves those UUIDs through `ElementProvider::freeTerminal()`.
@@ -74,6 +87,32 @@ Terminal-strip decision evidence:
 - Required MAM terminal-strip behavior: terminals with shared strip BMK `-X5` belong to the same terminal strip; the schematic representation displays `-X5` once for the strip and displays only the individual terminal numbers at the terminal points. Repeated `-X5` on each terminal must be suppressed/derived by terminal-strip rendering logic, not manually hidden through a visual overlay.
 - Current implementation gap: `TerminalStripAssignmentService::assignSingleLevelByPrefix()` scans `TerminalElement::actualLabel()` for the combined text pattern `<prefix>:<number>` and sorts by the numeric suffix. That is an implementation bridge, not accepted CAE Fachlogik. Adding a terminal with BMK `-X5` plus terminal number `11` will not currently auto-hide `-X5` or auto-extend a visible strip row unless separate grouping/rendering logic is added.
 - The next terminal-strip implementation slice should separate identity and presentation: source facts are shared strip BMK plus terminal number; grouping derives/updates the project `TerminalStrip`; presentation shows one strip designation and terminal numbers. Do not continue treating the visible overlay row as a valid CAE implementation.
+
+Current-path / continuation-reference decision evidence:
+- `Analysis_Current_Paths_Continuation_Arrows_CAE_Model.md` is the binding analysis note for Strompfade, Potentialfortsetzungen, Strompfadpfeile, and their CAE-standard cross-reference behavior.
+- User request from 2026-10-01: treat Strompfade/Strompfadpfeile like the terminal-strip correction: research standards and common CAE systems, then define the MAM target model before implementing more visible symbols.
+- Required MAM behavior: a current-path arrow is not the electrical connection and not the identity of the potential. It is a visible continuation object for a connection/net/potential/signal, with a stable fachliche identity and a calculated cross-reference display.
+- Separate facts must remain separate: potential name, signal name, conductor/wire number, cable/core, page/grid/path reference, arrow direction, and visible xref text. Do not pack them into one free `label` or manually maintained arrow text.
+- Current implementation gap: existing MAM pilot arrows with fields `potential`, `xref`, and `voltage` are presentation prototypes only. They do not yet form a native `Continuation`/`CrossReference` model and must not be treated as accepted CAE Fachlogik.
+- The next current-path implementation slice should derive a read-only `Continuation` projection from existing arrows/conductors first, with diagnostics for missing, ambiguous, stale, and manually inconsistent references, before any write-back or UI synchronization.
+
+PLC module decision evidence:
+- `Analysis_PLC_Modules_CAE_Model.md` is the binding analysis note for SPS-/PLC modules, channels, addresses, connection points, and overview/distributed representation behavior.
+- User request from 2026-10-01: apply the same norm-/CAE-system research workflow used for terminal strips and Strompfade to SPS modules.
+- Parallel research result: norm-oriented evidence (IEC 61131, IEC/ISO 81346, IEC 61082, IEC 61175, IEC 60617) and CAE-system evidence (EPLAN, WSCAD, Zuken E3.series/PLCBridge, SEE Electrical) both require PLC data to be modeled as fachliche objects, not as drawn table text.
+- Required MAM behavior: keep PLC station/controller, rack/bus node, slot, module/card, channel, connection point/pin, PLC address, symbolic address, function text, signal, potential/net, and representation as separate facts with explicit relationships.
+- Address is important but must not be the sole channel identity. Overview and distributed schematic symbols must reference the same `PLCChannel`/`PLCConnectionPoint` fachliches object; changing `%I0.7` to `%I1.0` must not create a new channel or break wiring/cross-references.
+- Existing `PlcIoProjectionService` remains a read-only transition bridge over `ElementData::PlcMasterData::ios`, `group_index`, and slave-side `plc_*` display copies. It is not the final PLC station/rack/module/channel/device-core model.
+- The next PLC implementation slice should add/read a read-only PLC module/channel/connection-point/representation projection and diagnostics for stale, conflicting, duplicate, empty, and out-of-range PLC facts before any write-back, UI sync, schema, or vendor-specific address validation.
+
+Cross-reference decision evidence:
+- `Analysis_Cross_References_CAE_Model.md` is the binding analysis note for Querverweise across devices, contacts, interruption/continuation points, PLC views, terminal strips, cables/cores, and reports.
+- User request from 2026-10-01: treat Querverweise as one of the most important topics and research intensely before implementation.
+- Required MAM behavior: a cross-reference is a fachliche relationship between objects and/or representations. The visible text (`/2.5`, `3-B13`, `=A1+S1/4.2`, contact mirror entries, PLC overview links) is only the resolved display.
+- Separate facts must remain separate: source object, target object or target set, relationship kind, cardinality, reference designation, page/folio, grid, path/current-path number, signal, potential, wire number, display format, status, and warnings.
+- Cross-reference kinds must not be collapsed: device references, contact mirrors, pair references, star references, continuation references, PLC overview/distributed I/O references, terminal-strip references, cable/core target references, and report/list backreferences each have distinct identity and cardinality rules.
+- Existing `CrossRefItem`, `XRefProperties`, `ContactCrossRefProjectionService`, `PlcIoProjectionService`, terminal-strip `genericXref()`, and pilot continuation arrows are useful evidence/projections, but together they are not yet a general MAM `CrossReference` Fachmodell.
+- The next cross-reference implementation slice should be read-only: a `CrossReferenceProjectionService` and `--export-mam-cross-reference` style CSV that gathers current islands, reports source/target/display/status/warnings, and diagnoses missing, ambiguous, stale, duplicate, conflicting, and unresolved references before any UI/rendering rewrite or write-back.
 
 Risks:
 - A premature XML/Core migration would couple MAM needs to QET compatibility risk before semantics are stable.
