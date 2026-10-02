@@ -22,6 +22,7 @@
 #include "conductornumexport.h"
 #include "conductorproperties.h"
 #include "contactcrossrefprojectionservice.h"
+#include "continuationprojectionservice.h"
 #include "crossreferenceprojectionservice.h"
 #include "dataBase/projectdatabase.h"
 #include "diagram.h"
@@ -86,6 +87,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-nets", "nets"},
 		{"--export-links", "links"},
 		{"--export-mam-cross-reference", "mam-cross-reference"},
+		{"--export-mam-continuation", "mam-continuation"},
 		{"--export-mam-contact-crossref", "mam-contact-crossref"},
 		{"--export-mam-plc-io", "mam-plc-io"},
 		{"--export-mam-summary", "mam-summary"},
@@ -1504,11 +1506,16 @@ int exportMamCrossReference(QETProject &project, const QString &output)
 
 	QString csv = columns.join(";") % "\n";
 	int warnings = 0;
+	int errors = 0;
 	for (const CrossReferenceProjection &reference : references) {
-		const QString status = reference.warnings.isEmpty()
-			? QStringLiteral("OK")
-			: QStringLiteral("WARNING");
-		if (!reference.warnings.isEmpty())
+		const QString status = reference.status.isEmpty()
+			? (reference.warnings.isEmpty()
+				? QStringLiteral("OK")
+				: QStringLiteral("WARNING"))
+			: reference.status;
+		if (status == QStringLiteral("ERROR"))
+			++errors;
+		else if (status == QStringLiteral("WARNING") || !reference.warnings.isEmpty())
 			++warnings;
 
 		const QStringList values {
@@ -1552,7 +1559,79 @@ int exportMamCrossReference(QETProject &project, const QString &output)
 	file.close();
 	out << "Exported " << references.size()
 		<< " MAM cross-reference row(s), "
-		<< warnings << " warning row(s) -> " << output << "\n";
+		<< warnings << " warning row(s), "
+		<< errors << " error row(s) -> " << output << "\n";
+	return 0;
+}
+
+/// MAM potential/current-path continuation diagnostics. This read-only export
+/// reports the existing pilot arrows, the relation that can be inferred, and
+/// explicit diagnostics instead of silently failing when the model is unclear.
+int exportMamContinuation(QETProject &project, const QString &output)
+{
+	ContinuationProjectionService service;
+	const QList<ContinuationProjection> continuations = service.continuations(project);
+
+	static const QStringList columns {
+		"potential", "signal", "voltage", "continuation_uuid",
+		"folio", "grid", "path", "direction",
+		"chain", "chain_order", "visible_xref",
+		"target_uuid", "target_folio", "target_grid", "target_path",
+		"computed_xref", "cardinality", "relationship", "status",
+		"diagnostics"
+	};
+
+	QString csv = columns.join(";") % "\n";
+	int warning_rows = 0;
+	int error_rows = 0;
+	for (const ContinuationProjection &continuation : continuations) {
+		if (continuation.status == QStringLiteral("ERROR")) {
+			++error_rows;
+		} else if (continuation.status == QStringLiteral("WARNING")) {
+			++warning_rows;
+		}
+
+		const QStringList values {
+			continuation.potential,
+			continuation.signal,
+			continuation.voltage,
+			uuidString(continuation.uuid),
+			continuation.folio < 0 ? QString() : QString::number(continuation.folio),
+			continuation.grid,
+			continuation.path,
+			continuation.direction,
+			continuation.chain,
+			continuation.chain_order < 0 ? QString() : QString::number(continuation.chain_order),
+			continuation.visible_xref,
+			uuidString(continuation.target_uuid),
+			continuation.target_folio < 0 ? QString() : QString::number(continuation.target_folio),
+			continuation.target_grid,
+			continuation.target_path,
+			continuation.computed_xref,
+			continuation.cardinality,
+			continuation.relationship,
+			continuation.status,
+			continuation.diagnostics.join(QStringLiteral(" | "))
+		};
+
+		QStringList escaped;
+		for (const QString &value : values)
+			escaped << csvField(value);
+		csv += escaped.join(QLatin1Char(';')) % "\n";
+	}
+
+	QFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << csv;
+	file.close();
+	out << "Exported " << continuations.size()
+		<< " MAM continuation row(s), "
+		<< warning_rows << " warning row(s), "
+		<< error_rows << " error row(s) -> " << output << "\n";
 	return 0;
 }
 
@@ -1950,6 +2029,8 @@ int run(const QStringList &args)
 		return exportMamSummary(project, output);
 	if (format == "mam-terminal-potential")
 		return exportMamTerminalPotential(project, output);
+	if (format == "mam-continuation")
+		return exportMamContinuation(project, output);
 	if (format == "mam-terminal-strip")
 		return exportMamTerminalStrip(project, output);
 	if (format == "assign-terminal-strip")

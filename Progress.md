@@ -1,5 +1,42 @@
 # Progress
 
+## 2026-10-02 - Potentiale / Fortsetzungen / Verweise Roadmap
+
+Completed:
+- Added `Roadmap_Potentials_References.md` as the focused implementation roadmap for Potentiale, Fortsetzungen, Strompfadpfeile and their calculated references.
+- The roadmap fixes the working sequence: read-only facts, diagnostics, persisted fachliche identity, calculated visible text, then UI/write-back.
+- It records the current implemented status: `--export-mam-terminal-potential`, `ContinuationProjectionService`, `--export-mam-continuation`, and `potential_continuation` rows in `CrossReferenceProjectionService`.
+- Implemented and verified the first read-only continuation diagnostic slice:
+  - `ContinuationProjectionService` detects existing `mam_potential_*` pilot arrows.
+  - `--export-mam-continuation` exports potential/signal, voltage, direction, folio/grid/path, visible `xref`, computed target reference, relationship/cardinality, status, and diagnostics.
+  - `CrossReferenceProjectionService` exposes continuation rows as `potential_continuation`.
+  - `--export-mam-cross-reference` now preserves `ERROR` status and reports warning/error row counts separately.
+- Hardened focused coverage for:
+  - normal 1:1 continuation pairs;
+  - stale visible `xref`;
+  - missing counterpart;
+  - empty potential/signal;
+  - ambiguous same-potential groups without chain order;
+  - contradictory same-direction pairs;
+  - `potential_continuation` rows in the cross-reference backbone.
+- Test portability was adjusted so continuation CLI tests only disable `QT_QPA_PLATFORM=offscreen` on Windows, and they locate the example project via a CMake-provided source path.
+
+Next required slice:
+- Decide and document the first persisted relationship model for continuation arrows: `chain`/`chain_order`, explicit pair ID, or both.
+- Add focused chain-order diagnostics before any UI or write-back: ordered chain OK, missing/duplicate `chain_order` as warnings, and missing chain target as error.
+- Keep UI/write-back out of scope until the read-only chain/pair model is stable.
+
+Verification:
+- Build on Windows/MSVC: `qelectrotech`, `tst_cli_export_equivalence`, and `tst_mam_cross_reference_export`.
+- Focused tests passed:
+  - `potentialContinuationDiagnosticsReportWarningsAndErrors`
+  - `potentialContinuationDiagnosticsCatchEdgeErrors`
+  - `exportsPotentialContinuationsAsBackboneRows`
+- Direct CLI checks:
+  - `--export-mam-continuation examples/MAM_Strompfade_2Seiten.qet` -> 8 rows, 5 warnings, 2 errors.
+  - `--export-mam-cross-reference examples/MAM_Strompfade_2Seiten.qet` -> 22 rows, 5 warnings, 2 errors.
+- Full `ctest` was not used for this slice because the existing Windows environment still has unrelated timeout sensitivity in older CLI export cases.
+
 ## 2026-10-01 - Querverweis-Backbone Commit und offener Continuation-Befund
 
 Completed:

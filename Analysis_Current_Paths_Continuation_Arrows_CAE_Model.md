@@ -328,16 +328,67 @@ Eine MAM-Strompfad-/Potentialfortsetzungsumsetzung ist erst akzeptabel, wenn:
 - Reports getrennt erzeugbar sind: Potentialliste, Leiterliste, Continuation-/Querverweisliste.
 - Der alte Pilotansatz mit Feldern `potential`, `xref`, `voltage` als Darstellungsprototyp dokumentiert bleibt und nicht als akzeptiertes Fachmodell gilt.
 
+## Problem Analysis Of The Failed Strompfad Attempts
+
+Die bisherigen Strompfadversuche sind nicht am sichtbaren Pfeilsymbol selbst gescheitert, sondern an der falschen Schichtung der Fachlogik.
+
+Der wesentliche Fehler war, dass sichtbare Pfeile und sichtbare Texte zu frueh als Loesung behandelt wurden. Ein Pfeil mit den Feldern `potential`, `xref` und `voltage` kann zwar eine brauchbare Planansicht erzeugen, ist aber noch kein CAE-gerechtes Strompfad-/Potentialfortsetzungsmodell. In einem CAE-System ist der Pfeil nur die Darstellung eines Fortsetzungsobjekts. Die gespeicherte Wahrheit muss getrennt beantworten:
+
+- welches Potential oder Signal fortgesetzt wird;
+- an welchem Anschluss-, Leiter- oder Fortsetzungspunkt die Unterbrechung liegt;
+- welche Fortsetzungspunkte fachlich zusammengehoeren;
+- welche Reihenfolge oder Kette zwischen mehreren gleichnamigen Fortsetzungen gilt;
+- welche Zieladresse daraus berechnet wird;
+- welcher sichtbare Text daraus angezeigt wird.
+
+Die fehlgeschlagenen Ansaetze haben diese Ebenen zu stark vermischt:
+
+- `xref` wurde als naheliegende Kopplungsinformation betrachtet, obwohl es nur sichtbare Darstellung ist.
+- Potentialname, Drahtnummer, Seiten-/Rasteradresse, Strompfadnummer und Zielverweis waren nicht streng genug getrennt.
+- Es gab keine stabile Ketteninformation wie Ketten-ID, Reihenfolge, Pair-/Group-ID oder explizite Source-/Destination-Fachbeziehung.
+- Bei genau zwei gleichen Potentialpfeilen ist eine sichere 1:1-Projektion moeglich; bei drei oder mehr gleichnamigen Fortsetzungen waere eine Kette aus Seiten-/Positionsreihenfolge nur eine Heuristik, solange keine Kettenregel oder Kettenidentitaet gespeichert ist.
+- Build- und Qt-Laufzeitprobleme haben die fachliche Bewertung zusaetzlich vernebelt, weil Startfehler und fehlende Qt-DLLs mit echten Testfehlern verwechselt werden konnten.
+
+Fuer MAM gilt daher verbindlich: Ein Strompfadpfeil darf nicht selbst der Querverweis sein. Er ist nur die sichtbare Projektion eines fachlichen Fortsetzungspunktes. Der sichtbare Zieltext wird aus der Beziehung berechnet und darf nicht als primaere Beziehung gespeichert oder ausgewertet werden.
+
+## Binding MAM Decisions For Strompfad Continuations
+
+Diese Entscheidungen gelten fuer die naechste Umsetzung:
+
+- Strompfade werden nicht frei geraten. Wenn bereits ein Strompfad angelegt ist, muss die Fortsetzung diesem Strompfad ueber eine Auswahl zugeordnet werden. Nach Nutzerwissen existiert eine solche Strompfad-/Pfad-Auswahl bzw. Pfadlogik bereits in QET und ist vor einer Neuanlage erneut zu pruefen.
+- Bei mehreren gleichen Potential-/Signalfortsetzungen erfolgt die Zuordnung manuell ueber die vorhandene bzw. zu ergaenzende Auswahl. Automatische Kettenbildung aus Position, Seite oder Potentialname allein ist nicht akzeptiert.
+- Automatik darf nur diagnostizieren und berechnen, nicht fachliche Kettenzuordnungen erfinden.
+- Das verbindliche Standard-Anzeigeformat fuer den sichtbaren Zielverweis ist `/Seite.Spalte`, zum Beispiel `/2.4`.
+- Seite und Spalte sind Zieladresse/Darstellung. Sie sind nicht die Identitaet des Potentials, Signals oder Strompfads.
+
 ## Suggested Implementation Slices
 
-1. Analysebericht als Leitplanke versionieren.
-2. Existing read-only report `--export-mam-terminal-potential` um eine separate Continuation-Diagnose vorbereiten, aber noch nicht schreiben.
-3. Ein minimales `Continuation`-Projektionsmodell aus vorhandenen MAM-Pfeilelementen ableiten: `potential`, `xref`, `voltage`, Folio, Koordinate, Richtung.
-4. Warnungen erzeugen: fehlendes Gegenstueck, mehrdeutige Gegenstuecke, leeres Potential, manuell widerspruechlicher `xref`.
-5. Danach erst Schreib-/Synchronisationslogik: sichtbare `xref`-Texte aus berechnetem Ziel aktualisieren.
-6. Spaeter: persistiertes Fachobjekt fuer Continuation/Signal/Potential, falls die Projektion stabil ist.
-7. UI: Navigator fuer Potential-/Signalfortsetzungen mit Pair-/Star-Auswahl.
-8. Grafische Darstellung aus dem Fachmodell generieren statt Pfeiltext als Fachwahrheit zu behandeln.
+1. Fachmodell fuer Fortsetzungen festlegen:
+   - Jede Potential-/Signalfortsetzung braucht eine stabile fachliche Identitaet.
+   - Jede Fortsetzung verweist auf ein Potential oder Signal, nicht auf freien Text.
+   - Richtung, Position, Seite, Raster/Pfad und sichtbarer Text bleiben getrennte Fakten.
+   - Eine Kette braucht eine explizite manuelle Zuordnung ueber Strompfad-/Kettenauswahl und eine daraus bestimmbare Reihenfolge; ohne diese Information darf keine mehrgliedrige Kette geraten werden.
+2. Read-only Continuation-Diagnose bauen:
+   - Bestehende MAM-Pfeilelemente auswerten und als Fortsetzungs-Kandidaten projizieren.
+   - Felder `potential`, `xref` und `voltage` nur als vorhandene Evidenz bzw. Darstellung lesen.
+   - Fuer jeden Kandidaten Folio, Position, Richtung, Potential-/Signalname und sichtbaren Text ausgeben.
+   - Status/Warnungen erzeugen: leeres Potential, fehlendes Gegenstueck, mehrdeutige Gegenstuecke, gleiche Richtung, widerspruechlicher sichtbarer `xref`, veralteter sichtbarer Text.
+3. Sichere Querverweise ableiten:
+   - Genau zwei passende Fortsetzungspunkte duerfen als 1:1-Querverweis projiziert werden.
+   - Mehr als zwei gleiche Potential-/Signalfortsetzungen duerfen nur dann als Kette projiziert werden, wenn eine manuelle Strompfad-/Kettenzuordnung vorhanden ist.
+   - Ohne eindeutige manuelle Zuordnung muss der Status `ambiguous continuation` entstehen.
+4. Sichttext erst nach stabiler Projektion berechnen:
+   - Der sichtbare Zieltext wird aus Zielseite und Zielspalte im Format `/Seite.Spalte` erzeugt.
+   - Seiten-, Raster- oder Pfadverschiebungen duerfen nur den sichtbaren Zieltext aendern, nicht Potential-/Signalidentitaet oder Kettenzuordnung.
+5. Schreib-/Synchronisationslogik erst danach:
+   - Erst wenn die read-only Diagnose stabil ist, duerfen sichtbare `xref`-Texte aus berechneten Zieladressen aktualisiert werden.
+   - Manuelle Aenderungen muessen entweder als fachliche Namensaenderung oder als Display-Override behandelt werden; beides darf nicht ununterscheidbar bleiben.
+6. Persistiertes Fachobjekt einfuehren, sobald die Projektion bewiesen ist:
+   - Fortsetzungspunkt, Potential/Signal, Ketten-ID, Reihenfolge, Richtung und Anzeigeformat muessen als getrennte Daten speicherbar werden.
+   - UI/Navigator fuer Potential-/Signalfortsetzungen kommt erst nach dieser Fachmodellstabilisierung.
+7. Grafische Darstellung aus dem Fachmodell generieren:
+   - Pfeilform, Textposition, Farbe, Layer und Sichtbarkeit sind Darstellung.
+   - Die Fachbeziehung wird nicht aus der Grafik rekonstruiert, sondern von ihr angezeigt.
 
 ## Public References
 

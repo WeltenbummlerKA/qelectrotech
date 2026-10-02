@@ -331,7 +331,8 @@ add_dependencies(tst_cli_export_equivalence qelectrotech)
 target_include_directories(tst_cli_export_equivalence PRIVATE ${QET_DIR}/sources)
 target_link_libraries(tst_cli_export_equivalence PRIVATE Qt::Test Qt::Core)
 target_compile_definitions(tst_cli_export_equivalence PRIVATE
-  "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
+  "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\""
+  "QET_TEST_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\"")
 
 add_executable(
   tst_terminal_potential_exports
@@ -371,7 +372,8 @@ add_dependencies(tst_mam_cross_reference_export qelectrotech)
 target_include_directories(tst_mam_cross_reference_export PRIVATE ${QET_DIR}/sources)
 target_link_libraries(tst_mam_cross_reference_export PRIVATE Qt::Test Qt::Core)
 target_compile_definitions(tst_mam_cross_reference_export PRIVATE
-  "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\"")
+  "QET_TEST_BINARY_PATH=\"$<TARGET_FILE:qelectrotech>\""
+  "QET_TEST_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\"")
 
 add_executable(
   tst_mam_terminal_potential_export

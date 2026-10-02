@@ -20,6 +20,7 @@
 #include "autoNum/assignvariables.h"
 #include "cablecorecrossrefprojectionservice.h"
 #include "contactcrossrefprojectionservice.h"
+#include "continuationprojectionservice.h"
 #include "diagram.h"
 #include "diagramposition.h"
 #include "plcioprojectionservice.h"
@@ -36,20 +37,6 @@
 #include <algorithm>
 
 namespace {
-
-struct ContinuationEndpoint
-{
-	Element *element = nullptr;
-	QUuid uuid;
-	QString potential;
-	QString voltage;
-	QString visible_xref;
-	QString role;
-	int folio = -1;
-	QString path;
-	QString position_text;
-	QPointF position;
-};
 
 QString folioReference(int folio)
 {
@@ -437,6 +424,32 @@ QList<CrossReferenceProjection> CrossReferenceProjectionService::references(QETP
 				result << reference;
 			}
 		}
+	}
+
+	ContinuationProjectionService continuation_service;
+	for (const ContinuationProjection &continuation : continuation_service.continuations(project)) {
+		CrossReferenceProjection reference;
+		reference.kind = QStringLiteral("potential_continuation");
+		reference.source_role = QStringLiteral("continuation");
+		reference.source_uuid = continuation.uuid;
+		reference.source_label = continuation.potential.isEmpty()
+			? continuation.signal
+			: continuation.potential;
+		reference.source_folio = continuation.folio;
+		reference.source_position = continuation.grid;
+		reference.target_role = QStringLiteral("continuation_target");
+		reference.target_uuid = continuation.target_uuid;
+		reference.target_label = reference.source_label;
+		reference.target_folio = continuation.target_folio;
+		reference.target_position = continuation.target_grid;
+		reference.relationship = continuation.relationship;
+		reference.cardinality = continuation.cardinality;
+		reference.display_text = continuation.computed_xref;
+		reference.reference_text = continuation.visible_xref;
+		reference.warnings = continuation.diagnostics;
+		reference.status = continuation.status;
+		reference.source_service = QStringLiteral("ContinuationProjectionService");
+		result << reference;
 	}
 
 	return result;

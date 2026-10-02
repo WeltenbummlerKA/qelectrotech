@@ -19,6 +19,7 @@
 
 #include "cli_test_utils.h"
 
+#include <QDir>
 #include <QFile>
 #include <QTemporaryDir>
 
@@ -96,6 +97,32 @@ QHash<QString, QString> rowByKindAndDisplayText(
 	return values;
 }
 
+QHash<QString, QString> rowByKindSourceLabelAndSourcePosition(
+	const QList<QStringList> &rows,
+	const QString &kind,
+	const QString &source_label,
+	const QString &source_position)
+{
+	QHash<QString, QString> values;
+	if (rows.isEmpty())
+		return values;
+
+	const QStringList header = rows.first();
+	for (int row = 1; row < rows.size(); ++row) {
+		const QStringList fields = rows.at(row);
+		if (fields.value(header.indexOf(QStringLiteral("kind"))) != kind
+			|| fields.value(header.indexOf(QStringLiteral("source_label"))) != source_label
+			|| fields.value(header.indexOf(QStringLiteral("source_position"))) != source_position) {
+			continue;
+		}
+
+		for (int column = 0; column < header.size(); ++column)
+			values.insert(header.at(column), fields.value(column));
+		return values;
+	}
+	return values;
+}
+
 int rowCountForKind(const QList<QStringList> &rows, const QString &kind)
 {
 	if (rows.isEmpty())
@@ -129,6 +156,30 @@ QString writeTextFile(QTemporaryDir &dir, const QString &name, const QString &co
 	file.write(content.toUtf8());
 	file.close();
 	return path;
+}
+
+QString currentPathContinuationExample()
+{
+	const QStringList candidates {
+		QString::fromLocal8Bit(QET_TEST_SOURCE_DIR) + QStringLiteral("/examples/MAM_Strompfade_2Seiten.qet"),
+		QDir::current().absoluteFilePath(QStringLiteral("examples/MAM_Strompfade_2Seiten.qet")),
+		QDir::current().absoluteFilePath(QStringLiteral("../../examples/MAM_Strompfade_2Seiten.qet"))
+	};
+	for (const QString &candidate : candidates) {
+		if (QFile::exists(candidate)) {
+			return candidate;
+		}
+	}
+	return {};
+}
+
+bool continuationCliUsesOffscreenPlatform()
+{
+#ifdef Q_OS_WIN
+	return false;
+#else
+	return true;
+#endif
 }
 
 QString plcMasterDataXml()
@@ -624,6 +675,71 @@ private slots:
 		QVERIFY(cable_b.value(QStringLiteral("reference_text")).contains(QStringLiteral("target ")));
 		QCOMPARE(cable_b.value(QStringLiteral("status")), QStringLiteral("OK"));
 		QCOMPARE(cable_b.value(QStringLiteral("warnings")), QString());
+	}
+
+	void exportsPotentialContinuationsAsBackboneRows()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir dir;
+		QVERIFY(dir.isValid());
+		const QString export_path = dir.filePath(QStringLiteral("mam_cross_reference_continuation.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-cross-reference"),
+			fixture,
+			export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QCOMPARE(result.exit_code, 0);
+		QVERIFY(result.stdout_text.contains(QStringLiteral("Exported 22 MAM cross-reference row(s), 5 warning row(s), 2 error row(s)")));
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+		QCOMPARE(rowCountForKind(rows, QStringLiteral("potential_continuation")), 8);
+
+		const QHash<QString, QString> l1_out = rowByKindSourceLabelAndSourcePosition(
+			rows,
+			QStringLiteral("potential_continuation"),
+			QStringLiteral("1L1"),
+			QStringLiteral("A5"));
+		QVERIFY(!l1_out.isEmpty());
+		QCOMPARE(l1_out.value(QStringLiteral("source_service")), QStringLiteral("ContinuationProjectionService"));
+		QCOMPARE(l1_out.value(QStringLiteral("source_role")), QStringLiteral("continuation"));
+		QCOMPARE(l1_out.value(QStringLiteral("source_folio")), QStringLiteral("1"));
+		QCOMPARE(l1_out.value(QStringLiteral("target_role")), QStringLiteral("continuation_target"));
+		QCOMPARE(l1_out.value(QStringLiteral("target_label")), QStringLiteral("1L1"));
+		QCOMPARE(l1_out.value(QStringLiteral("target_folio")), QStringLiteral("2"));
+		QCOMPARE(l1_out.value(QStringLiteral("target_position")), QStringLiteral("A0"));
+		QCOMPARE(l1_out.value(QStringLiteral("relationship")), QStringLiteral("auto-point-to-point"));
+		QCOMPARE(l1_out.value(QStringLiteral("cardinality")), QStringLiteral("1:1"));
+		QCOMPARE(l1_out.value(QStringLiteral("display_text")), QStringLiteral("/2.0"));
+		QCOMPARE(l1_out.value(QStringLiteral("reference_text")), QStringLiteral("/2.0"));
+		QCOMPARE(l1_out.value(QStringLiteral("status")), QStringLiteral("OK"));
+		QCOMPARE(l1_out.value(QStringLiteral("warnings")), QString());
+
+		const QHash<QString, QString> l1_in = rowByKindSourceLabelAndSourcePosition(
+			rows,
+			QStringLiteral("potential_continuation"),
+			QStringLiteral("1L1"),
+			QStringLiteral("A0"));
+		QVERIFY(!l1_in.isEmpty());
+		QCOMPARE(l1_in.value(QStringLiteral("display_text")), QStringLiteral("/1.5"));
+		QCOMPARE(l1_in.value(QStringLiteral("reference_text")), QStringLiteral("/1.0"));
+		QCOMPARE(l1_in.value(QStringLiteral("status")), QStringLiteral("WARNING"));
+		QVERIFY(l1_in.value(QStringLiteral("warnings")).contains(QStringLiteral("stale visible xref")));
+
+		const QHash<QString, QString> n1 = rowByKindSourceLabelAndSourcePosition(
+			rows,
+			QStringLiteral("potential_continuation"),
+			QStringLiteral("1N"),
+			QStringLiteral("E1"));
+		QVERIFY(!n1.isEmpty());
+		QCOMPARE(n1.value(QStringLiteral("relationship")), QStringLiteral("auto-by-potential"));
+		QCOMPARE(n1.value(QStringLiteral("cardinality")), QStringLiteral("unresolved"));
+		QCOMPARE(n1.value(QStringLiteral("target_uuid")), QString());
+		QCOMPARE(n1.value(QStringLiteral("target_folio")), QString());
+		QCOMPARE(n1.value(QStringLiteral("status")), QStringLiteral("ERROR"));
+		QVERIFY(n1.value(QStringLiteral("warnings")).contains(QStringLiteral("missing continuation counterpart")));
 	}
 };
 

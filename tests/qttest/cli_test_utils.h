@@ -17,14 +17,22 @@ struct CliResult {
 	QString stderr_text;
 };
 
-inline CliResult runQetCli(const QStringList &arguments, int timeout_ms = 30000)
+inline CliResult runQetCli(
+	const QStringList &arguments,
+	int timeout_ms = 30000,
+	bool use_offscreen_platform = true)
 {
 	QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-	env.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("offscreen"));
+	if (use_offscreen_platform)
+		env.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("offscreen"));
 
 	QProcess proc;
 	proc.setProcessEnvironment(env);
 	proc.start(QStringLiteral(QET_TEST_BINARY_PATH), arguments);
+	if (!proc.waitForStarted(5000)) {
+		return {-1, QString(),
+				QStringLiteral("failed to start: ") + proc.errorString()};
+	}
 	if (!proc.waitForFinished(timeout_ms)) {
 		proc.kill();
 		proc.waitForFinished();

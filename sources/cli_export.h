@@ -52,6 +52,7 @@ namespace CLIExport {
 		  qelectrotech --export-nets    <project.qet> <output.json>
 		  qelectrotech --export-links   <project.qet> <output.csv>
 		  qelectrotech --export-mam-cross-reference <project.qet> <output.csv>
+		  qelectrotech --export-mam-continuation <project.qet> <output.csv>
 		  qelectrotech --export-mam-summary <project.qet> <output.csv>
 		  qelectrotech --export-mam-terminal-potential <project.qet> <output.csv>
 		  qelectrotech --export-mam-terminal-strip <project.qet> <output.csv>
@@ -81,6 +82,8 @@ namespace CLIExport {
 		mam-cross-reference: private MAM read-only cross-reference backbone CSV,
 		       currently combining existing Contact/CrossRef and PLC IO projection
 		       islands without changing UI, XML, persistence, or ownership.
+		mam-continuation: private MAM read-only continuation/current-path
+		       diagnostic CSV for existing potential-arrow pilot elements.
 		mam-summary: private MAM read-only working-list CSV, combining
 		       separate PLC IO, Contact/CrossRef, and Terminal/Potential rows
 		       without inventing cross-domain joins.

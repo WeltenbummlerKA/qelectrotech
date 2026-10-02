@@ -90,11 +90,16 @@ Terminal-strip decision evidence:
 
 Current-path / continuation-reference decision evidence:
 - `Analysis_Current_Paths_Continuation_Arrows_CAE_Model.md` is the binding analysis note for Strompfade, Potentialfortsetzungen, Strompfadpfeile, and their CAE-standard cross-reference behavior.
+- `Roadmap_Potentials_References.md` is the binding working roadmap for the Potentiale/Fortsetzungen/Verweise implementation sequence after the first read-only continuation diagnostic slice.
 - User request from 2026-10-01: treat Strompfade/Strompfadpfeile like the terminal-strip correction: research standards and common CAE systems, then define the MAM target model before implementing more visible symbols.
 - Required MAM behavior: a current-path arrow is not the electrical connection and not the identity of the potential. It is a visible continuation object for a connection/net/potential/signal, with a stable fachliche identity and a calculated cross-reference display.
 - Separate facts must remain separate: potential name, signal name, conductor/wire number, cable/core, page/grid/path reference, arrow direction, and visible xref text. Do not pack them into one free `label` or manually maintained arrow text.
 - Current implementation gap: existing MAM pilot arrows with fields `potential`, `xref`, and `voltage` are presentation prototypes only. They do not yet form a native `Continuation`/`CrossReference` model and must not be treated as accepted CAE Fachlogik.
-- The next current-path implementation slice should derive a read-only `Continuation` projection from existing arrows/conductors first, with diagnostics for missing, ambiguous, stale, and manually inconsistent references, before any write-back or UI synchronization.
+- Current implementation status: `ContinuationProjectionService` and `--export-mam-continuation` now provide the first read-only diagnostic over existing MAM pilot arrows. The projection is also visible as `potential_continuation` in the general cross-reference backbone.
+- The first diagnostic hardening slice is now covered by focused tests for empty potential/signal, missing counterpart, ambiguous same-potential groups, same-direction pairs, stale visible `xref`, and `potential_continuation` cross-reference rows.
+- The current implementation remains read-only: no UI behavior, XML schema, persistence, automatic repair, or visible `xref` write-back is changed.
+- The next current-path implementation slice should define and test the first durable relationship model for continuation groups: `chain`/`chain_order`, explicit pair ID, or both. Ordered chain diagnostics must be proven read-only before any persistence, write-back, or UI synchronization.
+- Portability note: the production continuation service and CMake registration are not Windows-specific. The Windows-specific workaround is limited to qttest CLI execution, where continuation tests disable `QT_QPA_PLATFORM=offscreen` only on Windows.
 
 PLC module decision evidence:
 - `Analysis_PLC_Modules_CAE_Model.md` is the binding analysis note for SPS-/PLC modules, channels, addresses, connection points, and overview/distributed representation behavior.
