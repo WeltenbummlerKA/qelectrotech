@@ -42,6 +42,9 @@ Bereits vorhanden:
   - `mam_chain_id`/`mam_chain_order` ist der namespaced Pfad fuer Ketten;
   - `mam_pair_id` plus Kette ist ein Fehler;
   - legacy `chain`/`chain_order` bleibt vorerst als Alt-Evidenz unterstuetzt.
+- Der erste minimale Persistenznachweis ist umgesetzt:
+  - die namespaced Fakten liegen in den `elementInformations` der Pfeile;
+  - `--resave` erhaelt `mam_continuation_id`, `mam_pair_id`, `mam_chain_id` und `mam_chain_order` fuer die fokussierte Test-Fixture unveraendert.
 - `--export-mam-cross-reference` zaehlt `WARNING` und `ERROR` jetzt getrennt und stuft Continuation-Fehler nicht mehr zu Warnungen herunter.
 
 Wichtig: Die aktuellen Pilotpfeile mit `potential`, `xref` und `voltage` sind weiterhin keine akzeptierte Fachlogik. Sie sind nur Eingabeevidenz fuer die Diagnose.
@@ -173,10 +176,9 @@ Akzeptanz:
 
 Der naechste kleine Umsetzungsschritt ist weiterhin nicht UI und nicht Write-back, sondern die Fachmodellentscheidung vor Persistenz:
 
-1. Die erste Persistenzform fuer die bereits getesteten read-only Fakten festlegen. Aktuelle Empfehlung: beides.
-2. `mam_pair_id` fuer explizite 1:1-Fortsetzungen speichern.
-3. `mam_chain_id`/`mam_chain_order` fuer mehrpunktige Ketten speichern.
-4. Einen minimalen Load/Save-Ort fuer diese Fakten definieren und per Roundtrip testen.
-5. Erst danach UI/Write-back beginnen.
+1. Entscheiden, ob element-lokale `elementInformations` als erste private MAM-Persistenzform akzeptiert werden.
+2. Falls ja: einen read-only Migrations-/Empfehlungsreport fuer Legacy-Pfeile bauen, die eindeutig eine `mam_pair_id` erhalten koennten.
+3. Falls nein: vor UI/Write-back eine projektweite Continuation-Tabelle entwerfen und per Roundtrip testen.
+4. Erst danach UI/Write-back beginnen.
 
 Erst wenn dieser Slice stabil ist, beginnt Phase 2/3 mit persistierten Fachobjekten.

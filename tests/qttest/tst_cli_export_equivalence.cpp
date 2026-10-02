@@ -963,6 +963,81 @@ private slots:
 			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("mam_pair_id expects exactly two continuations")));
 		}
 	}
+
+	void potentialContinuationNamespacedFieldsSurviveResave()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString namespaced_fixture = writeContinuationNamespacedPairDiagnosticsFixture(fixture, out_dir);
+		QVERIFY2(!namespaced_fixture.isEmpty(), "failed to prepare namespaced continuation fixture");
+
+		const QString original_export_path = out_dir.filePath(QStringLiteral("mam_continuation_before_resave.csv"));
+		const CliTestUtils::CliResult original_export = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-continuation"),
+			namespaced_fixture,
+			original_export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(original_export.exit_code == 0,
+				 qPrintable(QStringLiteral("initial continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(original_export.exit_code)
+								.arg(original_export.stdout_text.left(500))
+								.arg(original_export.stderr_text.left(500))));
+
+		const QString resaved_path = out_dir.filePath(QStringLiteral("mam_continuation_namespaced_resaved.qet"));
+		const CliTestUtils::CliResult resave = CliTestUtils::runQetCli({
+			QStringLiteral("--resave"),
+			namespaced_fixture,
+			resaved_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(resave.exit_code == 0,
+				 qPrintable(QStringLiteral("namespaced continuation resave failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(resave.exit_code)
+								.arg(resave.stdout_text.left(500))
+								.arg(resave.stderr_text.left(500))));
+		QVERIFY(QFile::exists(resaved_path));
+		QVERIFY(QFileInfo(resaved_path).size() > 0);
+
+		const QString resaved_export_path = out_dir.filePath(QStringLiteral("mam_continuation_after_resave.csv"));
+		const CliTestUtils::CliResult resaved_export = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-continuation"),
+			resaved_path,
+			resaved_export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(resaved_export.exit_code == 0,
+				 qPrintable(QStringLiteral("resaved continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(resaved_export.exit_code)
+								.arg(resaved_export.stdout_text.left(500))
+								.arg(resaved_export.stderr_text.left(500))));
+
+		const QList<QStringList> original_rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(original_export_path)));
+		const QList<QStringList> resaved_rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(resaved_export_path)));
+		QCOMPARE(resaved_rows, original_rows);
+
+		const QList<QHash<QString, QString>> pair_ok = rowsByMamPairId(
+			resaved_rows,
+			QStringLiteral("PAIR_OK"));
+		QCOMPARE(pair_ok.size(), 2);
+		for (const QHash<QString, QString> &row : pair_ok) {
+			QVERIFY(row.value(QStringLiteral("mam_continuation_id")).startsWith(QStringLiteral("CONT-")));
+			QCOMPARE(row.value(QStringLiteral("relationship")), QStringLiteral("mam_pair PAIR_OK"));
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("OK"));
+		}
+
+		const QList<QHash<QString, QString>> conflicting_pair = rowsByMamPairId(
+			resaved_rows,
+			QStringLiteral("PAIR_CHAIN"));
+		QCOMPARE(conflicting_pair.size(), 2);
+		for (const QHash<QString, QString> &row : conflicting_pair) {
+			QCOMPARE(row.value(QStringLiteral("mam_chain_id")), QStringLiteral("CHAIN_CONFLICT"));
+			QVERIFY(!row.value(QStringLiteral("mam_chain_order")).isEmpty());
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("ERROR"));
+		}
+	}
 };
 
 QTEST_APPLESS_MAIN(tst_cli_export_equivalence)

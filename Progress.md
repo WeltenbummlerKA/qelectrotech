@@ -31,9 +31,13 @@ Completed:
   - `mam_chain_id`/`mam_chain_order` provide the namespaced replacement path for legacy `chain`/`chain_order`;
   - combining `mam_pair_id` with any chain relationship is reported as an error;
   - legacy `chain`/`chain_order` remains supported for the existing test evidence.
+- Pinned the first minimal persistence surface:
+  - the namespaced continuation facts are stored as element `elementInformations`;
+  - a `--resave` roundtrip preserves the exported `mam_continuation_id`, `mam_pair_id`, `mam_chain_id`, and `mam_chain_order` facts exactly for the focused fixture.
 
 Next required slice:
-- Decide the first persistence shape for these already-tested read-only facts. Current recommendation is both: `mam_pair_id` for explicit 1:1 relationships and `mam_chain_id`/`mam_chain_order` for multi-point chains.
+- Decide whether element-local `elementInformations` remains the accepted first persistence shape for the MAM private fork, or whether a later project-level continuation table is required before UI editing.
+- If element-local persistence is accepted for the first MAM slice, add a read-only migration/report recommendation for legacy pilot arrows that can safely receive `mam_pair_id`.
 - Keep UI/write-back out of scope until the read-only chain/pair model is stable.
 
 Verification:
@@ -45,6 +49,7 @@ Verification:
   - `potentialContinuationDiagnosticsReadNamespacedPairFields`
   - `potentialContinuationDiagnosticsReadNamespacedChainFields`
   - `potentialContinuationDiagnosticsRejectsPairCardinalityAboveTwo`
+  - `potentialContinuationNamespacedFieldsSurviveResave`
   - `exportsPotentialContinuationsAsBackboneRows`
 - Direct CLI checks:
   - `--export-mam-continuation examples/MAM_Strompfade_2Seiten.qet` -> 8 rows, 5 warnings, 2 errors.
