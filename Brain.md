@@ -97,8 +97,9 @@ Current-path / continuation-reference decision evidence:
 - Current implementation gap: existing MAM pilot arrows with fields `potential`, `xref`, and `voltage` are presentation prototypes only. They do not yet form a native `Continuation`/`CrossReference` model and must not be treated as accepted CAE Fachlogik.
 - Current implementation status: `ContinuationProjectionService` and `--export-mam-continuation` now provide the first read-only diagnostic over existing MAM pilot arrows. The projection is also visible as `potential_continuation` in the general cross-reference backbone.
 - The first diagnostic hardening slice is now covered by focused tests for empty potential/signal, missing counterpart, ambiguous same-potential groups, same-direction pairs, stale visible `xref`, and `potential_continuation` cross-reference rows.
+- Chain-order diagnostics are now also pinned read-only: an ordered chain can resolve calculated targets, while missing `chain_order`, duplicate `chain_order`, and direction endpoints without a chain target are exposed as warning/error facts.
 - The current implementation remains read-only: no UI behavior, XML schema, persistence, automatic repair, or visible `xref` write-back is changed.
-- The next current-path implementation slice should define and test the first durable relationship model for continuation groups: `chain`/`chain_order`, explicit pair ID, or both. Ordered chain diagnostics must be proven read-only before any persistence, write-back, or UI synchronization.
+- The next current-path implementation slice should decide the first durable relationship model for continuation groups: `chain`/`chain_order`, explicit pair ID, or both. That decision comes before any persistence, write-back, or UI synchronization.
 - Portability note: the production continuation service and CMake registration are not Windows-specific. The Windows-specific workaround is limited to qttest CLI execution, where continuation tests disable `QT_QPA_PLATFORM=offscreen` only on Windows.
 
 PLC module decision evidence:

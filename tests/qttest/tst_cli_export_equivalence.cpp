@@ -71,6 +71,28 @@ QList<QHash<QString, QString>> rowsByPotential(
 	return matches;
 }
 
+QList<QHash<QString, QString>> rowsByChain(
+	const QList<QStringList> &rows,
+	const QString &chain)
+{
+	QList<QHash<QString, QString>> matches;
+	if (rows.isEmpty())
+		return matches;
+
+	const QStringList header = rows.first();
+	for (int row = 1; row < rows.size(); ++row) {
+		const QStringList fields = rows.at(row);
+		if (fields.value(header.indexOf(QStringLiteral("chain"))) != chain)
+			continue;
+
+		QHash<QString, QString> values;
+		for (int column = 0; column < header.size(); ++column)
+			values.insert(header.at(column), fields.value(column));
+		matches << values;
+	}
+	return matches;
+}
+
 QHash<QString, QString> rowByPotentialStatusAndDiagnostic(
 	const QList<QStringList> &rows,
 	const QString &potential,
@@ -144,6 +166,122 @@ QString writeContinuationDiagnosticsEdgeFixture(const QString &source, QTemporar
 		return {};
 
 	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_diagnostics_edge.qet"));
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+		return {};
+	file.write(text.toUtf8());
+	return path;
+}
+
+QString chainInfoXml(const QString &chain, const QString &order)
+{
+	QString text = QStringLiteral("<elementInformation show=\"1\" name=\"chain\">%1</elementInformation>")
+		.arg(chain);
+	if (!order.isEmpty()) {
+		text += QStringLiteral("<elementInformation show=\"1\" name=\"chain_order\">%1</elementInformation>")
+			.arg(order);
+	}
+	return text;
+}
+
+QString continuationInfoXml(
+	const QString &potential,
+	const QString &xref,
+	const QString &chain,
+	const QString &order,
+	const QString &voltage = QString())
+{
+	QString text = QStringLiteral("<elementInformations>"
+		"<elementInformation show=\"1\" name=\"potential\">%1</elementInformation>"
+		"<elementInformation show=\"1\" name=\"xref\">%2</elementInformation>")
+			.arg(potential, xref);
+	if (!voltage.isEmpty()) {
+		text += QStringLiteral("<elementInformation show=\"1\" name=\"voltage\">%1</elementInformation>")
+			.arg(voltage);
+	}
+	text += chainInfoXml(chain, order);
+	text += QStringLiteral("</elementInformations>");
+	return text;
+}
+
+QString writeContinuationChainDiagnosticsFixture(const QString &source, QTemporaryDir &out_dir)
+{
+	QString text = QString::fromUtf8(CliTestUtils::readFile(source));
+	if (text.isEmpty())
+		return {};
+
+	bool ok = true;
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("1L1"),
+			QStringLiteral("/1.5"),
+			QStringLiteral("CHAIN_OK"),
+			QStringLiteral("1"),
+			QStringLiteral("400VAC")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L2</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.1</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("1L2"),
+			QStringLiteral("/2.0"),
+			QStringLiteral("CHAIN_OK"),
+			QStringLiteral("2")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L3</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.2</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("1L3"),
+			QStringLiteral("/2.0"),
+			QStringLiteral("CHAIN_BAD"),
+			QStringLiteral("0")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1N</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.3</elementInformation><elementInformation show=\"1\" name=\"voltage\">0VAC</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("1N"),
+			QStringLiteral("/1.2"),
+			QStringLiteral("CHAIN_BAD"),
+			QStringLiteral("2"),
+			QStringLiteral("0VAC")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">2N</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.4</elementInformation><elementInformation show=\"1\" name=\"voltage\">0VAC</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("2N"),
+			QStringLiteral("/1.1"),
+			QStringLiteral("CHAIN_BAD"),
+			QStringLiteral("1"),
+			QStringLiteral("0VAC")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("1L1"),
+			QStringLiteral("/1.5"),
+			QStringLiteral("CHAIN_BAD"),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L2</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.1</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("1L2"),
+			QStringLiteral("/1.5"),
+			QStringLiteral("CHAIN_BAD"),
+			QStringLiteral("0")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L3</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.2</elementInformation></elementInformations>"),
+		continuationInfoXml(
+			QStringLiteral("1L3"),
+			QStringLiteral("/1.5"),
+			QStringLiteral("CHAIN_OK"),
+			QStringLiteral("3")));
+	if (!ok)
+		return {};
+
+	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_chain_diagnostics.qet"));
 	QFile file(path);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
 		return {};
@@ -379,6 +517,61 @@ private slots:
 			QCOMPARE(row.value(QStringLiteral("direction")), QStringLiteral("right"));
 			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("contradictory continuation direction")));
 		}
+	}
+
+	void potentialContinuationDiagnosticsReportChainOrderIssues()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString chain_fixture = writeContinuationChainDiagnosticsFixture(fixture, out_dir);
+		QVERIFY2(!chain_fixture.isEmpty(), "failed to prepare chain-case continuation fixture");
+
+		const QString export_path = out_dir.filePath(QStringLiteral("mam_continuation_chain.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-continuation"),
+			chain_fixture,
+			export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(result.exit_code == 0,
+				 qPrintable(QStringLiteral("chain continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(result.exit_code)
+								.arg(result.stdout_text.left(500))
+								.arg(result.stderr_text.left(500))));
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+		QCOMPARE(rows.size(), 9);
+
+		const QList<QHash<QString, QString>> ok_chain = rowsByChain(rows, QStringLiteral("CHAIN_OK"));
+		QCOMPARE(ok_chain.size(), 3);
+		for (const QHash<QString, QString> &row : ok_chain) {
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("OK"));
+			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("chain"));
+			QVERIFY(row.value(QStringLiteral("relationship")).startsWith(QStringLiteral("chain CHAIN_OK order ")));
+			QVERIFY(!row.value(QStringLiteral("computed_xref")).isEmpty());
+			QVERIFY(row.value(QStringLiteral("diagnostics")).isEmpty());
+		}
+
+		const QList<QHash<QString, QString>> bad_chain = rowsByChain(rows, QStringLiteral("CHAIN_BAD"));
+		QCOMPARE(bad_chain.size(), 5);
+		bool saw_missing_order = false;
+		bool saw_duplicate_order = false;
+		bool saw_missing_target = false;
+		for (const QHash<QString, QString> &row : bad_chain) {
+			const QString diagnostics = row.value(QStringLiteral("diagnostics"));
+			saw_missing_order = saw_missing_order
+				|| diagnostics.contains(QStringLiteral("missing chain_order"));
+			saw_duplicate_order = saw_duplicate_order
+				|| diagnostics.contains(QStringLiteral("duplicate chain_order 0"));
+			saw_missing_target = saw_missing_target
+				|| diagnostics.contains(QStringLiteral("missing chain target for direction"));
+		}
+		QVERIFY2(saw_missing_order, "expected missing chain_order diagnostic");
+		QVERIFY2(saw_duplicate_order, "expected duplicate chain_order diagnostic");
+		QVERIFY2(saw_missing_target, "expected missing chain target diagnostic");
 	}
 };
 

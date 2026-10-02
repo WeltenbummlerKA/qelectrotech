@@ -31,6 +31,11 @@ Bereits vorhanden:
   - mehr als zwei gleiche Potentiale ohne Ketteninformation;
   - gleiche Richtung bei einem 1:1-Paar;
   - `potential_continuation`-Zeilen im allgemeinen CrossReference-Backbone.
+- Die erste Ketten-Diagnose ist ebenfalls read-only getestet:
+  - geordnete `chain`/`chain_order`-Kette ohne Warnung;
+  - fehlende `chain_order` als Warnung;
+  - doppelte `chain_order` als Warnung;
+  - fehlendes Ziel am Kettenanfang/-ende als Fehler.
 - `--export-mam-cross-reference` zaehlt `WARNING` und `ERROR` jetzt getrennt und stuft Continuation-Fehler nicht mehr zu Warnungen herunter.
 
 Wichtig: Die aktuellen Pilotpfeile mit `potential`, `xref` und `voltage` sind weiterhin keine akzeptierte Fachlogik. Sie sind nur Eingabeevidenz fuer die Diagnose.
@@ -67,7 +72,7 @@ Aufgaben:
   - mehr als zwei gleiche Potentiale ohne Ketteninformation;
   - gleiche Richtung bei einem 1:1-Paar.
 - CrossReference-Export pruefen: `potential_continuation`-Zeilen muessen dieselben Status- und Diagnosefakten tragen. Status: umgesetzt und fokussiert getestet.
-- Noch offen in Phase 1: Kettenlogik gezielt testen, bevor sie persistiert wird:
+- Kettenlogik ist gezielt getestet, bevor sie persistiert wird:
   - eindeutige Kette mit Reihenfolge als OK;
   - fehlende `chain_order` als Warnung;
   - doppelte `chain_order` als Warnung;
@@ -160,11 +165,11 @@ Akzeptanz:
 
 ## Naechster empfohlener Slice
 
-Der naechste kleine Umsetzungsschritt ist weiterhin nicht UI und nicht Persistenz, sondern die letzte Diagnose-Haertung vor dem Fachmodell:
+Der naechste kleine Umsetzungsschritt ist weiterhin nicht UI und nicht Write-back, sondern die Fachmodellentscheidung vor Persistenz:
 
-1. Eine kleine Ketten-Fixture fuer `--export-mam-continuation` bauen.
-2. Darin `chain`/`chain_order` mit eindeutiger Reihenfolge, fehlender Reihenfolge, doppelter Reihenfolge und fehlendem Ziel pruefen.
-3. Danach entscheiden, ob die erste persistierte Zusatzinformation `chain`/`chain_order`, explizite Paar-ID oder beides wird.
+1. Entscheiden, ob die erste persistierte Zusatzinformation `chain`/`chain_order`, explizite Paar-ID oder beides wird.
+2. Falls `chain`/`chain_order` akzeptiert wird, einen minimalen Load/Save-Ort fuer diese Fakten definieren.
+3. Falls explizite Paar-ID erforderlich ist, zuerst deren 1:1-Diagnose in `--export-mam-continuation` ergaenzen.
 4. Erst danach Phase 2/3 beginnen.
 
 Erst wenn dieser Slice stabil ist, beginnt Phase 2/3 mit persistierten Fachobjekten.

@@ -20,10 +20,15 @@ Completed:
   - contradictory same-direction pairs;
   - `potential_continuation` rows in the cross-reference backbone.
 - Test portability was adjusted so continuation CLI tests only disable `QT_QPA_PLATFORM=offscreen` on Windows, and they locate the example project via a CMake-provided source path.
+- Continued Phase 1 with focused chain-order diagnostic coverage:
+  - ordered `chain`/`chain_order` rows are projected as chain references without warnings;
+  - missing `chain_order` is reported as a warning;
+  - duplicate `chain_order` is reported as a warning;
+  - a chain endpoint whose direction has no next/previous target is reported as an error.
 
 Next required slice:
 - Decide and document the first persisted relationship model for continuation arrows: `chain`/`chain_order`, explicit pair ID, or both.
-- Add focused chain-order diagnostics before any UI or write-back: ordered chain OK, missing/duplicate `chain_order` as warnings, and missing chain target as error.
+- Review whether the read-only chain behavior is the desired first persisted model, or whether explicit pair IDs are also required for manual point-to-point cases.
 - Keep UI/write-back out of scope until the read-only chain/pair model is stable.
 
 Verification:
@@ -31,6 +36,7 @@ Verification:
 - Focused tests passed:
   - `potentialContinuationDiagnosticsReportWarningsAndErrors`
   - `potentialContinuationDiagnosticsCatchEdgeErrors`
+  - `potentialContinuationDiagnosticsReportChainOrderIssues`
   - `exportsPotentialContinuationsAsBackboneRows`
 - Direct CLI checks:
   - `--export-mam-continuation examples/MAM_Strompfade_2Seiten.qet` -> 8 rows, 5 warnings, 2 errors.
