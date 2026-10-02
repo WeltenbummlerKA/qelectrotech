@@ -128,6 +128,8 @@ set(QET_SRC_FILES
   ${QET_DIR}/sources/cablecorecrossrefprojectionservice.h
   ${QET_DIR}/sources/contactcrossrefprojectionservice.cpp
   ${QET_DIR}/sources/contactcrossrefprojectionservice.h
+  ${QET_DIR}/sources/continuationpairidassignmentservice.cpp
+  ${QET_DIR}/sources/continuationpairidassignmentservice.h
   ${QET_DIR}/sources/continuationprojectionservice.cpp
   ${QET_DIR}/sources/continuationprojectionservice.h
   ${QET_DIR}/sources/crossreferenceprojectionservice.cpp

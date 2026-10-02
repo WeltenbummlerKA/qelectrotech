@@ -137,6 +137,28 @@ QList<QHash<QString, QString>> rowsByMamPairId(
 	return matches;
 }
 
+QList<QHash<QString, QString>> rowsBySuggestedMamPairId(
+	const QList<QStringList> &rows,
+	const QString &pair_id)
+{
+	QList<QHash<QString, QString>> matches;
+	if (rows.isEmpty())
+		return matches;
+
+	const QStringList header = rows.first();
+	for (int row = 1; row < rows.size(); ++row) {
+		const QStringList fields = rows.at(row);
+		if (fields.value(header.indexOf(QStringLiteral("suggested_mam_pair_id"))) != pair_id)
+			continue;
+
+		QHash<QString, QString> values;
+		for (int column = 0; column < header.size(); ++column)
+			values.insert(header.at(column), fields.value(column));
+		matches << values;
+	}
+	return matches;
+}
+
 QHash<QString, QString> rowByPotentialStatusAndDiagnostic(
 	const QList<QStringList> &rows,
 	const QString &potential,
@@ -157,6 +179,32 @@ void verifyNoMigrationSuggestion(const QHash<QString, QString> &row)
 {
 	QVERIFY(row.value(QStringLiteral("suggested_mam_pair_id")).isEmpty());
 	QVERIFY(row.value(QStringLiteral("migration_recommendation")).isEmpty());
+}
+
+bool continuationCliUsesOffscreenPlatform();
+
+QList<QStringList> exportMamContinuationRows(
+	const QString &fixture,
+	QTemporaryDir &out_dir,
+	const QString &name)
+{
+	const QString export_path = out_dir.filePath(name);
+	const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+		QStringLiteral("--export-mam-continuation"),
+		fixture,
+		export_path
+	}, 30000, continuationCliUsesOffscreenPlatform());
+	if (result.exit_code != 0) {
+		QTest::qFail(qPrintable(QStringLiteral("continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+						.arg(result.exit_code)
+						.arg(result.stdout_text.left(500))
+						.arg(result.stderr_text.left(500))),
+					__FILE__,
+					__LINE__);
+		return {};
+	}
+	return CliTestUtils::parseSemicolonCsv(
+		QString::fromUtf8(CliTestUtils::readFile(export_path)));
 }
 
 QString currentPathContinuationExample()
@@ -880,6 +928,109 @@ private slots:
 		}
 	}
 
+	void potentialContinuationApplyPairIdsWritesSafeSuggestedPairs()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QList<QStringList> before_rows = exportMamContinuationRows(
+			fixture,
+			out_dir,
+			QStringLiteral("mam_continuation_before_apply.csv"));
+		QVERIFY(!before_rows.isEmpty());
+
+		QSet<QString> suggested_pair_ids;
+		int candidate_rows = 0;
+		for (const QStringList &fields : before_rows.mid(1)) {
+			const QStringList header = before_rows.first();
+			const QString recommendation = fields.value(header.indexOf(QStringLiteral("migration_recommendation")));
+			if (recommendation != QStringLiteral("candidate: assign mam_pair_id"))
+				continue;
+			++candidate_rows;
+			suggested_pair_ids.insert(fields.value(header.indexOf(QStringLiteral("suggested_mam_pair_id"))));
+		}
+		QCOMPARE(candidate_rows, 6);
+		QCOMPARE(suggested_pair_ids.size(), 3);
+
+		const QString applied_path = out_dir.filePath(QStringLiteral("mam_continuation_pair_ids_applied.qet"));
+		const CliTestUtils::CliResult apply = CliTestUtils::runQetCli({
+			QStringLiteral("--apply-mam-continuation-pair-ids"),
+			fixture,
+			applied_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(apply.exit_code == 0,
+				 qPrintable(QStringLiteral("continuation pair-id apply failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(apply.exit_code)
+								.arg(apply.stdout_text.left(500))
+								.arg(apply.stderr_text.left(500))));
+		QVERIFY(apply.stdout_text.contains(QStringLiteral("pairs=3, elements=6")));
+		QVERIFY(QFile::exists(applied_path));
+		QVERIFY(QFileInfo(applied_path).size() > 0);
+
+		const QList<QStringList> after_rows = exportMamContinuationRows(
+			applied_path,
+			out_dir,
+			QStringLiteral("mam_continuation_after_apply.csv"));
+		QVERIFY(!after_rows.isEmpty());
+		QCOMPARE(after_rows.size(), before_rows.size());
+		for (const QString &pair_id : suggested_pair_ids) {
+			const QList<QHash<QString, QString>> applied_pair = rowsByMamPairId(after_rows, pair_id);
+			QCOMPARE(applied_pair.size(), 2);
+			for (const QHash<QString, QString> &row : applied_pair) {
+				QCOMPARE(row.value(QStringLiteral("relationship")), QStringLiteral("mam_pair %1").arg(pair_id));
+				QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("1:1"));
+				verifyNoMigrationSuggestion(row);
+			}
+			QVERIFY(rowsBySuggestedMamPairId(after_rows, pair_id).isEmpty());
+		}
+
+		const QList<QHash<QString, QString>> unresolved_neutral = rowsByPotential(after_rows, QStringLiteral("1N"));
+		QCOMPARE(unresolved_neutral.size(), 1);
+		QVERIFY(unresolved_neutral.first().value(QStringLiteral("mam_pair_id")).isEmpty());
+		QCOMPARE(unresolved_neutral.first().value(QStringLiteral("status")), QStringLiteral("ERROR"));
+	}
+
+	void potentialContinuationApplyPairIdsSkipsConflictingLegacyLabels()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString conflicting_fixture = writeContinuationConflictingSignalFixture(fixture, out_dir);
+		QVERIFY2(!conflicting_fixture.isEmpty(), "failed to prepare conflicting-signal continuation fixture");
+
+		const QString applied_path = out_dir.filePath(QStringLiteral("mam_continuation_conflicting_signal_applied.qet"));
+		const CliTestUtils::CliResult apply = CliTestUtils::runQetCli({
+			QStringLiteral("--apply-mam-continuation-pair-ids"),
+			conflicting_fixture,
+			applied_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(apply.exit_code == 0,
+				 qPrintable(QStringLiteral("conflicting-signal continuation apply failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(apply.exit_code)
+								.arg(apply.stdout_text.left(500))
+								.arg(apply.stderr_text.left(500))));
+
+		const QList<QStringList> after_rows = exportMamContinuationRows(
+			applied_path,
+			out_dir,
+			QStringLiteral("mam_continuation_conflicting_signal_after_apply.csv"));
+		QVERIFY(!after_rows.isEmpty());
+		const QList<QHash<QString, QString>> conflicting_signal = rowsBySignal(
+			after_rows,
+			QStringLiteral("SIG-CONFLICT"));
+		QCOMPARE(conflicting_signal.size(), 2);
+		for (const QHash<QString, QString> &row : conflicting_signal) {
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("WARNING"));
+			QVERIFY(row.value(QStringLiteral("mam_pair_id")).isEmpty());
+			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("conflicting legacy potential or signal labels")));
+			verifyNoMigrationSuggestion(row);
+		}
+	}
+
 	void potentialContinuationDiagnosticsReportChainOrderIssues()
 	{
 		const QString fixture = currentPathContinuationExample();
@@ -993,6 +1144,42 @@ private slots:
 			QCOMPARE(row.value(QStringLiteral("mam_chain_id")), QStringLiteral("CHAIN_CONFLICT"));
 			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("ERROR"));
 			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("mam_pair_id cannot be combined")));
+		}
+	}
+
+	void potentialContinuationApplyPairIdsSkipsChains()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString chain_fixture = writeContinuationChainDiagnosticsFixture(fixture, out_dir);
+		QVERIFY2(!chain_fixture.isEmpty(), "failed to prepare chain-case continuation fixture");
+
+		const QString applied_path = out_dir.filePath(QStringLiteral("mam_continuation_chain_applied.qet"));
+		const CliTestUtils::CliResult apply = CliTestUtils::runQetCli({
+			QStringLiteral("--apply-mam-continuation-pair-ids"),
+			chain_fixture,
+			applied_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(apply.exit_code == 0,
+				 qPrintable(QStringLiteral("chain continuation apply failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(apply.exit_code)
+								.arg(apply.stdout_text.left(500))
+								.arg(apply.stderr_text.left(500))));
+
+		const QList<QStringList> after_rows = exportMamContinuationRows(
+			applied_path,
+			out_dir,
+			QStringLiteral("mam_continuation_chain_after_apply.csv"));
+		QVERIFY(!after_rows.isEmpty());
+		const QList<QHash<QString, QString>> ok_chain = rowsByChain(after_rows, QStringLiteral("CHAIN_OK"));
+		QCOMPARE(ok_chain.size(), 3);
+		for (const QHash<QString, QString> &row : ok_chain) {
+			QVERIFY(row.value(QStringLiteral("mam_pair_id")).isEmpty());
+			QVERIFY(row.value(QStringLiteral("relationship")).startsWith(QStringLiteral("chain CHAIN_OK order ")));
+			verifyNoMigrationSuggestion(row);
 		}
 	}
 

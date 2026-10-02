@@ -53,6 +53,11 @@ Bereits vorhanden:
   - nur `examples/MAM_Strompfade_2Seiten.qet` enthaelt MAM-Fortsetzungspfeile;
   - dort werden genau die drei erwarteten Legacy-1:1-Paare vorgeschlagen;
   - fuer widerspruechliche nicht-leere Legacy-Labels wird kein `mam_pair_id`-Kandidat vorgeschlagen.
+- Die erste explizite Migrations-Schreibfunktion ist umgesetzt:
+  - `--apply-mam-continuation-pair-ids <input.qet> <output.qet>` schreibt nur diagnostizierte `candidate: assign mam_pair_id`-Paare;
+  - die Quelle wird nicht in-place veraendert;
+  - `xref`, `potential`, `signal`, Chain-Felder, UI und sichtbare Texte bleiben unveraendert;
+  - Warn-/Fehlerfaelle ohne Migrationskandidat, Chains und konfliktierende Legacy-Labels werden uebersprungen.
 - `--export-mam-cross-reference` zaehlt `WARNING` und `ERROR` jetzt getrennt und stuft Continuation-Fehler nicht mehr zu Warnungen herunter.
 
 Wichtig: Die aktuellen Pilotpfeile mit `potential`, `xref` und `voltage` sind weiterhin keine akzeptierte Fachlogik. Sie sind nur Eingabeevidenz fuer die Diagnose.
@@ -97,6 +102,10 @@ Aufgaben:
 - Migrationsvorschlaege bleiben konservativ:
   - nur Legacy-1:1-Paare mit entgegengesetzter Richtung und ohne Chain/Pair-Fakten erhalten einen Vorschlag;
   - widerspruechliche nicht-leere `potential`-/`signal`-Labels unterdruecken den Vorschlag und erzeugen eine Warnung.
+- Der optionale Apply-Befehl ist explizit und kandidatengesteuert:
+  - geschrieben wird nur, was die Diagnose bereits mit `migration_recommendation` als sicher markiert;
+  - sichtbare XRef-Warnungen blockieren die Paar-ID-Migration nicht, weil sichtbarer Text ein spaeterer Sync-Schritt ist;
+  - Chains, mehrdeutige Gruppen, explizite bestehende Paare und Fehlerfaelle werden nicht automatisch repariert.
 
 Akzeptanz:
 
@@ -136,10 +145,11 @@ Ziel: Fortsetzungen werden als fachliche Projektinformationen gespeichert, ohne 
 
 Aufgaben:
 
-- Minimalen XML-/Projekt-Speicherort fuer MAM-spezifische Continuation-Fakten festlegen.
-- Load/Save-Roundtrip fuer Continuation-ID, Potential/Signal-Bezug, Richtung, Kette und Reihenfolge testen.
-- Alte Pilotpfeile weiter lesbar lassen.
-- Diagnose so erweitern, dass sie zwischen persistierter Fachbeziehung und sichtbarem Pilotfeld unterscheidet.
+- Minimalen XML-/Projekt-Speicherort fuer MAM-spezifische Continuation-Fakten festlegen. Status: erste private Persistenz ueber Pfeil-`elementInformations`.
+- Load/Save-Roundtrip fuer Continuation-ID, Potential/Signal-Bezug, Richtung, Kette und Reihenfolge testen. Status: fuer namespaced Pair/Chain-Fakten fokussiert umgesetzt.
+- Alte Pilotpfeile weiter lesbar lassen. Status: umgesetzt.
+- Diagnose so erweitern, dass sie zwischen persistierter Fachbeziehung und sichtbarem Pilotfeld unterscheidet. Status: umgesetzt fuer `mam_pair_id`, `mam_chain_id`, `mam_chain_order` und sichtbaren `xref`.
+- Explizite Migration sicherer Legacy-1:1-Paare anbieten. Status: `--apply-mam-continuation-pair-ids` umgesetzt; nur separate Output-Datei, kein UI-Write-back.
 
 Akzeptanz:
 
@@ -185,11 +195,11 @@ Akzeptanz:
 
 ## Naechster empfohlener Slice
 
-Der naechste kleine Umsetzungsschritt ist weiterhin nicht UI und nicht Write-back, sondern die Fachmodellentscheidung vor Persistenz:
+Der naechste kleine Umsetzungsschritt bleibt nicht UI und nicht sichtbarer Text-Sync, sondern Verifikation und Modellentscheidung nach dem ersten expliziten Apply-Befehl:
 
-1. Entscheiden, ob element-lokale `elementInformations` als erste private MAM-Persistenzform akzeptiert werden.
-2. Die read-only Migrationsvorschlaege auf repraesentativen Plaenen pruefen.
+1. `--apply-mam-continuation-pair-ids` auf repraesentativen MAM-Plaenen testen und die erzeugten `mam_pair_id`-Beziehungen mit `--export-mam-continuation` pruefen.
+2. Entscheiden, ob element-lokale `elementInformations` als erste private MAM-Persistenzform akzeptiert werden.
 3. Falls element-lokale Persistenz nicht reicht: vor UI/Write-back eine projektweite Continuation-Tabelle entwerfen und per Roundtrip testen.
-4. Erst danach eine explizite Schreibfunktion fuer `mam_pair_id` oder UI/Write-back beginnen.
+4. Danach erst sichtbaren `xref`-Text-Sync entwerfen; UI-Bedienung kommt weiterhin zuletzt.
 
-Erst wenn dieser Slice stabil ist, beginnt Phase 2/3 mit persistierten Fachobjekten.
+Erst wenn dieser Slice stabil ist, beginnt sichtbare Aktualisierung im Plan.

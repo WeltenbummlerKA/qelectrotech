@@ -22,6 +22,7 @@
 #include "conductornumexport.h"
 #include "conductorproperties.h"
 #include "contactcrossrefprojectionservice.h"
+#include "continuationpairidassignmentservice.h"
 #include "continuationprojectionservice.h"
 #include "crossreferenceprojectionservice.h"
 #include "dataBase/projectdatabase.h"
@@ -88,6 +89,7 @@ const QHash<QString, QString> &exportFlags()
 		{"--export-links", "links"},
 		{"--export-mam-cross-reference", "mam-cross-reference"},
 		{"--export-mam-continuation", "mam-continuation"},
+		{"--apply-mam-continuation-pair-ids", "apply-mam-continuation-pair-ids"},
 		{"--export-mam-contact-crossref", "mam-contact-crossref"},
 		{"--export-mam-plc-io", "mam-plc-io"},
 		{"--export-mam-summary", "mam-summary"},
@@ -1855,6 +1857,32 @@ int assignTerminalStrip(QETProject &project, const QString &output, const QStrin
 	return 0;
 }
 
+int applyMamContinuationPairIds(QETProject &project, const QString &output)
+{
+	const ContinuationPairIdAssignmentResult assignment =
+		ContinuationPairIdAssignmentService().assignSuggestedPairIds(project);
+
+	const QDomDocument doc = project.toXml();
+	QSaveFile file(output);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		err << "Cannot open '" << output << "' for writing.\n";
+		return 1;
+	}
+	QTextStream fout(&file);
+	fout << doc.toString(4);
+	if (!file.commit()) {
+		err << "Cannot commit '" << output << "' for writing.\n";
+		return 1;
+	}
+	out << "Applied MAM continuation pair ids: pairs=" << assignment.applied_pairs
+		<< ", elements=" << assignment.applied_elements
+		<< ", skipped_warning=" << assignment.skipped_warning
+		<< ", skipped_error=" << assignment.skipped_error
+		<< ", skipped_non_candidate=" << assignment.skipped_non_candidate
+		<< " -> " << output << "\n";
+	return 0;
+}
+
 /// Stamp title-block fields onto every folio (and the project default), then
 /// save.  Each assignment is "key=value".  Standard keys map to the documented
 /// title-block fields; "date=today" uses the current date; any other key is
@@ -2043,6 +2071,8 @@ int run(const QStringList &args)
 		return exportMamTerminalStrip(project, output);
 	if (format == "assign-terminal-strip")
 		return assignTerminalStrip(project, output, rest.value(2));
+	if (format == "apply-mam-continuation-pair-ids")
+		return applyMamContinuationPairIds(project, output);
 	if (format == "resave")
 		return resaveProject(project, output);
 	if (format == "settb")

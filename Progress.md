@@ -45,10 +45,15 @@ Completed:
   - the audit exposed no candidate rows in unrelated example projects.
 - Added a focused false-positive guard for legacy migration suggestions:
   - if an auto 1:1 pair has conflicting non-empty legacy `potential` or `signal` labels, it is reported as a warning and no `mam_pair_id` suggestion is emitted.
+- Added the first explicit write slice for continuation relationships:
+  - `--apply-mam-continuation-pair-ids <input.qet> <output.qet>` writes only diagnosed `candidate: assign mam_pair_id` rows;
+  - the command writes `mam_pair_id` into arrow `elementInformations` and leaves `xref`, `potential`, `signal`, chain data, UI state, and source file unchanged;
+  - warning/error/chain/conflicting-label rows without a migration recommendation are skipped;
+  - output is written to a separate file with `QSaveFile`.
 
 Next required slice:
+- Review the explicit `--apply-mam-continuation-pair-ids` output on real MAM customer/user plans beyond the bundled examples before adding UI write-back or visible `xref` synchronization.
 - Decide whether element-local `elementInformations` remains the accepted first persistence shape for the MAM private fork, or whether a later project-level continuation table is required before UI editing.
-- Review the read-only migration recommendations on real MAM customer/user plans beyond the bundled examples before adding any command that writes `mam_pair_id`.
 - Keep UI/write-back out of scope until the read-only chain/pair model is stable.
 
 Verification:
@@ -62,9 +67,13 @@ Verification:
   - `potentialContinuationDiagnosticsRejectsPairCardinalityAboveTwo`
   - `potentialContinuationNamespacedFieldsSurviveResave`
   - `potentialContinuationMigrationSkipsConflictingLegacyLabels`
+  - `potentialContinuationApplyPairIdsWritesSafeSuggestedPairs`
+  - `potentialContinuationApplyPairIdsSkipsConflictingLegacyLabels`
+  - `potentialContinuationApplyPairIdsSkipsChains`
   - `exportsPotentialContinuationsAsBackboneRows`
 - Direct CLI checks:
   - `--export-mam-continuation examples/MAM_Strompfade_2Seiten.qet` -> 8 rows, 5 warnings, 2 errors.
+  - focused apply/export regression: `--apply-mam-continuation-pair-ids` writes three explicit pair IDs for `MAM_Strompfade_2Seiten.qet`; a follow-up `--export-mam-continuation` shows those relationships as `mam_pair` rows with no remaining migration recommendation for those pairs.
   - `--export-mam-continuation examples/*.qet` -> only `MAM_Strompfade_2Seiten.qet` produced continuation rows; all other bundled examples produced zero continuation rows, except `industrial.qet` which crashed in the current Windows CLI run before producing rows.
   - `--export-mam-cross-reference examples/MAM_Strompfade_2Seiten.qet` -> 22 rows, 5 warnings, 2 errors.
 - Full `ctest` was not used for this slice because the existing Windows environment still has unrelated timeout sensitivity in older CLI export cases.
