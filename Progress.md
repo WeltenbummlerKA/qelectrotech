@@ -51,7 +51,20 @@ Completed:
   - warning/error/chain/conflicting-label rows without a migration recommendation are skipped;
   - output is written to a separate file with `QSaveFile`.
 
+Wichtig:
+- The first bundled-example "real plan" audit must not be repeated as an unsupervised batch on Windows.
+- Most non-MAM `examples/*.qet` projects exported cleanly with zero MAM continuation rows, but `industrial.qet` and `m_000.qet` produced Windows application-error dialogs/timeouts during CLI startup/export.
+- No source `.qet` files were modified; audit output was written only below `build/realplan-continuation-audit*`.
+- Treat `industrial.qet`/`m_000.qet` as a separate Windows CLI stability issue. Future real-plan checks must run one plan at a time, with crash-dialog suppression or a safer harness, and only after confirming no user-facing dialogs will be left open.
+- Safe real-plan audit harness design note:
+  - do not glob all `examples/*.qet`; use an explicit allowlist of actual MAM/customer plans and an explicit denylist for `examples/industrial.qet` and `examples/m_000.qet`;
+  - run one project per child process with a hard timeout and temporary output only;
+  - on Windows suppress user-facing crash UI before child startup via `SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX)` inheritance and preferably an early CLI-side `WerSetFlags(WER_FAULT_REPORTING_NO_UI)`/`SetErrorMode` guard;
+  - `QT_QPA_PLATFORM=offscreen` is not a crash-dialog guard; for continuation export/apply on Windows keep the same no-offscreen behavior as the focused tests unless a specific plan proves otherwise;
+  - `--apply-mam-continuation-pair-ids` may only be run after a clean export on the same input and must write to a separate output `.qet`, followed by re-export verification.
+
 Next required slice:
+- Implement the safe Windows real-plan audit harness before running any more real-plan continuation/export/apply audits.
 - Review the explicit `--apply-mam-continuation-pair-ids` output on real MAM customer/user plans beyond the bundled examples before adding UI write-back or visible `xref` synchronization.
 - Decide whether element-local `elementInformations` remains the accepted first persistence shape for the MAM private fork, or whether a later project-level continuation table is required before UI editing.
 - Keep UI/write-back out of scope until the read-only chain/pair model is stable.
