@@ -173,6 +173,26 @@ QString chainRelationship(const ContinuationProjection &projection)
 		.arg(projection.chain_order);
 }
 
+QString suggestedPairId(const ContinuationProjection &left, const ContinuationProjection &right)
+{
+	QString first = left.uuid.toString(QUuid::WithoutBraces);
+	QString second = right.uuid.toString(QUuid::WithoutBraces);
+	if (second < first) {
+		std::swap(first, second);
+	}
+	return QStringLiteral("mam_pair:%1:%2").arg(first, second);
+}
+
+bool hasConflictingLegacyLabels(const ContinuationProjection &left, const ContinuationProjection &right)
+{
+	return (!left.potential.isEmpty()
+			&& !right.potential.isEmpty()
+			&& left.potential != right.potential)
+		|| (!left.signal.isEmpty()
+			&& !right.signal.isEmpty()
+			&& left.signal != right.signal);
+}
+
 } // namespace
 
 QList<ContinuationProjection> ContinuationProjectionService::continuations(QETProject &project) const
@@ -304,9 +324,24 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 			}
 			setTarget(first, second);
 			setTarget(second, first);
-			if (!hasOppositeDirection(first, second)) {
+			const bool opposite_direction = hasOppositeDirection(first, second);
+			if (!opposite_direction) {
 				first.diagnostics << QStringLiteral("ERROR: contradictory continuation direction");
 				second.diagnostics << QStringLiteral("ERROR: contradictory continuation direction");
+			} else if (first.mam_pair_id.isEmpty()
+				&& second.mam_pair_id.isEmpty()
+				&& first.chain.isEmpty()
+				&& second.chain.isEmpty()) {
+				if (hasConflictingLegacyLabels(first, second)) {
+					first.diagnostics << QStringLiteral("WARNING: conflicting legacy potential or signal labels");
+					second.diagnostics << QStringLiteral("WARNING: conflicting legacy potential or signal labels");
+				} else {
+					const QString suggested_pair_id = suggestedPairId(first, second);
+					first.suggested_mam_pair_id = suggested_pair_id;
+					second.suggested_mam_pair_id = suggested_pair_id;
+					first.migration_recommendation = QStringLiteral("candidate: assign mam_pair_id");
+					second.migration_recommendation = QStringLiteral("candidate: assign mam_pair_id");
+				}
 			}
 			checkVisibleText(first);
 			checkVisibleText(second);

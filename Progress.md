@@ -34,10 +34,21 @@ Completed:
 - Pinned the first minimal persistence surface:
   - the namespaced continuation facts are stored as element `elementInformations`;
   - a `--resave` roundtrip preserves the exported `mam_continuation_id`, `mam_pair_id`, `mam_chain_id`, and `mam_chain_order` facts exactly for the focused fixture.
+- Added the first read-only migration recommendation surface:
+  - legacy auto-resolved 1:1 continuation pairs now export a deterministic `suggested_mam_pair_id`;
+  - `migration_recommendation` marks those rows as `candidate: assign mam_pair_id`;
+  - the recommendation does not write, repair, or change the project.
+- Reviewed the migration recommendation on the shipped example set:
+  - all `examples/*.qet` projects were exported with `--export-mam-continuation`;
+  - only `examples/MAM_Strompfade_2Seiten.qet` contains MAM continuation pilot arrows;
+  - its six recommendations cover the three expected legacy 1:1 pairs only;
+  - the audit exposed no candidate rows in unrelated example projects.
+- Added a focused false-positive guard for legacy migration suggestions:
+  - if an auto 1:1 pair has conflicting non-empty legacy `potential` or `signal` labels, it is reported as a warning and no `mam_pair_id` suggestion is emitted.
 
 Next required slice:
 - Decide whether element-local `elementInformations` remains the accepted first persistence shape for the MAM private fork, or whether a later project-level continuation table is required before UI editing.
-- If element-local persistence is accepted for the first MAM slice, add a read-only migration/report recommendation for legacy pilot arrows that can safely receive `mam_pair_id`.
+- Review the read-only migration recommendations on real MAM customer/user plans beyond the bundled examples before adding any command that writes `mam_pair_id`.
 - Keep UI/write-back out of scope until the read-only chain/pair model is stable.
 
 Verification:
@@ -50,9 +61,11 @@ Verification:
   - `potentialContinuationDiagnosticsReadNamespacedChainFields`
   - `potentialContinuationDiagnosticsRejectsPairCardinalityAboveTwo`
   - `potentialContinuationNamespacedFieldsSurviveResave`
+  - `potentialContinuationMigrationSkipsConflictingLegacyLabels`
   - `exportsPotentialContinuationsAsBackboneRows`
 - Direct CLI checks:
   - `--export-mam-continuation examples/MAM_Strompfade_2Seiten.qet` -> 8 rows, 5 warnings, 2 errors.
+  - `--export-mam-continuation examples/*.qet` -> only `MAM_Strompfade_2Seiten.qet` produced continuation rows; all other bundled examples produced zero continuation rows, except `industrial.qet` which crashed in the current Windows CLI run before producing rows.
   - `--export-mam-cross-reference examples/MAM_Strompfade_2Seiten.qet` -> 22 rows, 5 warnings, 2 errors.
 - Full `ctest` was not used for this slice because the existing Windows environment still has unrelated timeout sensitivity in older CLI export cases.
 

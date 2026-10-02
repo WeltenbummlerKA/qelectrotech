@@ -51,6 +51,8 @@ struct ContinuationProjection
 	QString relationship;
 	QString status;
 	QStringList diagnostics;
+	QString suggested_mam_pair_id;
+	QString migration_recommendation;
 };
 
 class ContinuationProjectionService

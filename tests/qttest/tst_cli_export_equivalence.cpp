@@ -71,6 +71,28 @@ QList<QHash<QString, QString>> rowsByPotential(
 	return matches;
 }
 
+QList<QHash<QString, QString>> rowsBySignal(
+	const QList<QStringList> &rows,
+	const QString &signal)
+{
+	QList<QHash<QString, QString>> matches;
+	if (rows.isEmpty())
+		return matches;
+
+	const QStringList header = rows.first();
+	for (int row = 1; row < rows.size(); ++row) {
+		const QStringList fields = rows.at(row);
+		if (fields.value(header.indexOf(QStringLiteral("signal"))) != signal)
+			continue;
+
+		QHash<QString, QString> values;
+		for (int column = 0; column < header.size(); ++column)
+			values.insert(header.at(column), fields.value(column));
+		matches << values;
+	}
+	return matches;
+}
+
 QList<QHash<QString, QString>> rowsByChain(
 	const QList<QStringList> &rows,
 	const QString &chain)
@@ -131,6 +153,12 @@ QHash<QString, QString> rowByPotentialStatusAndDiagnostic(
 	return {};
 }
 
+void verifyNoMigrationSuggestion(const QHash<QString, QString> &row)
+{
+	QVERIFY(row.value(QStringLiteral("suggested_mam_pair_id")).isEmpty());
+	QVERIFY(row.value(QStringLiteral("migration_recommendation")).isEmpty());
+}
+
 QString currentPathContinuationExample()
 {
 	const QStringList candidates {
@@ -188,6 +216,32 @@ QString writeContinuationDiagnosticsEdgeFixture(const QString &source, QTemporar
 		return {};
 
 	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_diagnostics_edge.qet"));
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+		return {};
+	file.write(text.toUtf8());
+	return path;
+}
+
+QString writeContinuationConflictingSignalFixture(const QString &source, QTemporaryDir &out_dir)
+{
+	QString text = QString::fromUtf8(CliTestUtils::readFile(source));
+	if (text.isEmpty())
+		return {};
+
+	bool ok = true;
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"signal\">SIG-CONFLICT</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">2L1</elementInformation><elementInformation show=\"1\" name=\"signal\">SIG-CONFLICT</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"));
+	if (!ok)
+		return {};
+
+	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_conflicting_signal.qet"));
 	QFile file(path);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
 		return {};
@@ -670,6 +724,8 @@ private slots:
 				QStringLiteral("mam_pair_id"),
 				QStringLiteral("mam_chain_id"),
 				QStringLiteral("mam_chain_order"),
+				QStringLiteral("suggested_mam_pair_id"),
+				QStringLiteral("migration_recommendation"),
 				QStringLiteral("chain"),
 				QStringLiteral("chain_order"),
 				QStringLiteral("visible_xref"),
@@ -694,6 +750,8 @@ private slots:
 		QCOMPARE(l1_out.value(QStringLiteral("relationship")), QStringLiteral("auto-point-to-point"));
 		QCOMPARE(l1_out.value(QStringLiteral("computed_xref")), QStringLiteral("/2.0"));
 		QCOMPARE(l1_out.value(QStringLiteral("visible_xref")), QStringLiteral("/2.0"));
+		QVERIFY(!l1_out.value(QStringLiteral("suggested_mam_pair_id")).isEmpty());
+		QCOMPARE(l1_out.value(QStringLiteral("migration_recommendation")), QStringLiteral("candidate: assign mam_pair_id"));
 
 		const QHash<QString, QString> l1_in = rowByPotentialAndDirection(
 			rows,
@@ -703,6 +761,10 @@ private slots:
 		QCOMPARE(l1_in.value(QStringLiteral("status")), QStringLiteral("WARNING"));
 		QCOMPARE(l1_in.value(QStringLiteral("computed_xref")), QStringLiteral("/1.5"));
 		QCOMPARE(l1_in.value(QStringLiteral("visible_xref")), QStringLiteral("/1.0"));
+		QCOMPARE(
+			l1_in.value(QStringLiteral("suggested_mam_pair_id")),
+			l1_out.value(QStringLiteral("suggested_mam_pair_id")));
+		QCOMPARE(l1_in.value(QStringLiteral("migration_recommendation")), QStringLiteral("candidate: assign mam_pair_id"));
 		QVERIFY(l1_in.value(QStringLiteral("diagnostics")).contains(QStringLiteral("stale visible xref")));
 
 		const QHash<QString, QString> n1 = rowByPotentialAndDirection(
@@ -713,6 +775,7 @@ private slots:
 		QCOMPARE(n1.value(QStringLiteral("status")), QStringLiteral("ERROR"));
 		QCOMPARE(n1.value(QStringLiteral("cardinality")), QStringLiteral("unresolved"));
 		QVERIFY(n1.value(QStringLiteral("diagnostics")).contains(QStringLiteral("missing continuation counterpart")));
+		verifyNoMigrationSuggestion(n1);
 	}
 
 	void potentialContinuationDiagnosticsCatchEdgeErrors()
@@ -750,6 +813,7 @@ private slots:
 		QVERIFY(!empty_potential.isEmpty());
 		QCOMPARE(empty_potential.value(QStringLiteral("direction")), QStringLiteral("down"));
 		QCOMPARE(empty_potential.value(QStringLiteral("cardinality")), QStringLiteral("unresolved"));
+		verifyNoMigrationSuggestion(empty_potential);
 
 		const QList<QHash<QString, QString>> ambiguous_l1 = rowsByPotential(rows, QStringLiteral("1L1"));
 		QCOMPARE(ambiguous_l1.size(), 3);
@@ -757,6 +821,7 @@ private slots:
 			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("WARNING"));
 			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("ambiguous"));
 			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("ambiguous continuation group without chain order")));
+			verifyNoMigrationSuggestion(row);
 		}
 
 		const QHash<QString, QString> missing_l2 = rowByPotentialStatusAndDiagnostic(
@@ -773,6 +838,45 @@ private slots:
 			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("1:1"));
 			QCOMPARE(row.value(QStringLiteral("direction")), QStringLiteral("right"));
 			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("contradictory continuation direction")));
+			verifyNoMigrationSuggestion(row);
+		}
+	}
+
+	void potentialContinuationMigrationSkipsConflictingLegacyLabels()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString conflicting_fixture = writeContinuationConflictingSignalFixture(fixture, out_dir);
+		QVERIFY2(!conflicting_fixture.isEmpty(), "failed to prepare conflicting-signal continuation fixture");
+
+		const QString export_path = out_dir.filePath(QStringLiteral("mam_continuation_conflicting_signal.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-continuation"),
+			conflicting_fixture,
+			export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(result.exit_code == 0,
+				 qPrintable(QStringLiteral("conflicting-signal continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(result.exit_code)
+								.arg(result.stdout_text.left(500))
+								.arg(result.stderr_text.left(500))));
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+
+		const QList<QHash<QString, QString>> conflicting_signal = rowsBySignal(
+			rows,
+			QStringLiteral("SIG-CONFLICT"));
+		QCOMPARE(conflicting_signal.size(), 2);
+		for (const QHash<QString, QString> &row : conflicting_signal) {
+			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("1:1"));
+			QCOMPARE(row.value(QStringLiteral("relationship")), QStringLiteral("auto-point-to-point"));
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("WARNING"));
+			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("conflicting legacy potential or signal labels")));
+			verifyNoMigrationSuggestion(row);
 		}
 	}
 
@@ -810,6 +914,7 @@ private slots:
 			QVERIFY(row.value(QStringLiteral("relationship")).startsWith(QStringLiteral("chain CHAIN_OK order ")));
 			QVERIFY(!row.value(QStringLiteral("computed_xref")).isEmpty());
 			QVERIFY(row.value(QStringLiteral("diagnostics")).isEmpty());
+			verifyNoMigrationSuggestion(row);
 		}
 
 		const QList<QHash<QString, QString>> bad_chain = rowsByChain(rows, QStringLiteral("CHAIN_BAD"));
@@ -864,6 +969,7 @@ private slots:
 			QCOMPARE(row.value(QStringLiteral("relationship")), QStringLiteral("mam_pair PAIR_OK"));
 			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("OK"));
 			QVERIFY(row.value(QStringLiteral("diagnostics")).isEmpty());
+			verifyNoMigrationSuggestion(row);
 		}
 
 		const QList<QHash<QString, QString>> single_pair = rowsByMamPairId(rows, QStringLiteral("PAIR_SINGLE"));

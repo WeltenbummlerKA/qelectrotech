@@ -45,6 +45,14 @@ Bereits vorhanden:
 - Der erste minimale Persistenznachweis ist umgesetzt:
   - die namespaced Fakten liegen in den `elementInformations` der Pfeile;
   - `--resave` erhaelt `mam_continuation_id`, `mam_pair_id`, `mam_chain_id` und `mam_chain_order` fuer die fokussierte Test-Fixture unveraendert.
+- Die erste read-only Migrationshilfe ist umgesetzt:
+  - eindeutig auto-aufgeloeste Legacy-1:1-Paare erhalten `suggested_mam_pair_id`;
+  - `migration_recommendation` markiert diese Zeilen als `candidate: assign mam_pair_id`;
+  - es wird nichts automatisch geschrieben oder repariert.
+- Die Migrationshilfe wurde gegen die mitgelieferten Beispiele geprueft:
+  - nur `examples/MAM_Strompfade_2Seiten.qet` enthaelt MAM-Fortsetzungspfeile;
+  - dort werden genau die drei erwarteten Legacy-1:1-Paare vorgeschlagen;
+  - fuer widerspruechliche nicht-leere Legacy-Labels wird kein `mam_pair_id`-Kandidat vorgeschlagen.
 - `--export-mam-cross-reference` zaehlt `WARNING` und `ERROR` jetzt getrennt und stuft Continuation-Fehler nicht mehr zu Warnungen herunter.
 
 Wichtig: Die aktuellen Pilotpfeile mit `potential`, `xref` und `voltage` sind weiterhin keine akzeptierte Fachlogik. Sie sind nur Eingabeevidenz fuer die Diagnose.
@@ -86,6 +94,9 @@ Aufgaben:
   - fehlende `chain_order` als Warnung;
   - doppelte `chain_order` als Warnung;
   - fehlendes Ziel innerhalb einer Kette als Fehler.
+- Migrationsvorschlaege bleiben konservativ:
+  - nur Legacy-1:1-Paare mit entgegengesetzter Richtung und ohne Chain/Pair-Fakten erhalten einen Vorschlag;
+  - widerspruechliche nicht-leere `potential`-/`signal`-Labels unterdruecken den Vorschlag und erzeugen eine Warnung.
 
 Akzeptanz:
 
@@ -177,8 +188,8 @@ Akzeptanz:
 Der naechste kleine Umsetzungsschritt ist weiterhin nicht UI und nicht Write-back, sondern die Fachmodellentscheidung vor Persistenz:
 
 1. Entscheiden, ob element-lokale `elementInformations` als erste private MAM-Persistenzform akzeptiert werden.
-2. Falls ja: einen read-only Migrations-/Empfehlungsreport fuer Legacy-Pfeile bauen, die eindeutig eine `mam_pair_id` erhalten koennten.
-3. Falls nein: vor UI/Write-back eine projektweite Continuation-Tabelle entwerfen und per Roundtrip testen.
-4. Erst danach UI/Write-back beginnen.
+2. Die read-only Migrationsvorschlaege auf repraesentativen Plaenen pruefen.
+3. Falls element-lokale Persistenz nicht reicht: vor UI/Write-back eine projektweite Continuation-Tabelle entwerfen und per Roundtrip testen.
+4. Erst danach eine explizite Schreibfunktion fuer `mam_pair_id` oder UI/Write-back beginnen.
 
 Erst wenn dieser Slice stabil ist, beginnt Phase 2/3 mit persistierten Fachobjekten.
