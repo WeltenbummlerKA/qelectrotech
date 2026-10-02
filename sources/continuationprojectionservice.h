@@ -31,6 +31,10 @@ struct ContinuationProjection
 	QString potential;
 	QString signal;
 	QString voltage;
+	QString mam_continuation_id;
+	QString mam_pair_id;
+	QString mam_chain_id;
+	int mam_chain_order = -1;
 	QString chain;
 	int chain_order = -1;
 	QString direction;

@@ -93,6 +93,28 @@ QList<QHash<QString, QString>> rowsByChain(
 	return matches;
 }
 
+QList<QHash<QString, QString>> rowsByMamPairId(
+	const QList<QStringList> &rows,
+	const QString &pair_id)
+{
+	QList<QHash<QString, QString>> matches;
+	if (rows.isEmpty())
+		return matches;
+
+	const QStringList header = rows.first();
+	for (int row = 1; row < rows.size(); ++row) {
+		const QStringList fields = rows.at(row);
+		if (fields.value(header.indexOf(QStringLiteral("mam_pair_id"))) != pair_id)
+			continue;
+
+		QHash<QString, QString> values;
+		for (int column = 0; column < header.size(); ++column)
+			values.insert(header.at(column), fields.value(column));
+		matches << values;
+	}
+	return matches;
+}
+
 QHash<QString, QString> rowByPotentialStatusAndDiagnostic(
 	const QList<QStringList> &rows,
 	const QString &potential,
@@ -204,6 +226,43 @@ QString continuationInfoXml(
 	return text;
 }
 
+QString mamContinuationInfoXml(
+	const QString &potential,
+	const QString &xref,
+	const QString &mam_continuation_id,
+	const QString &mam_pair_id,
+	const QString &mam_chain_id,
+	const QString &mam_chain_order,
+	const QString &legacy_chain = QString(),
+	const QString &legacy_chain_order = QString())
+{
+	QString text = QStringLiteral("<elementInformations>"
+		"<elementInformation show=\"1\" name=\"potential\">%1</elementInformation>"
+		"<elementInformation show=\"1\" name=\"xref\">%2</elementInformation>")
+			.arg(potential, xref);
+	if (!mam_continuation_id.isEmpty()) {
+		text += QStringLiteral("<elementInformation show=\"1\" name=\"mam_continuation_id\">%1</elementInformation>")
+			.arg(mam_continuation_id);
+	}
+	if (!mam_pair_id.isEmpty()) {
+		text += QStringLiteral("<elementInformation show=\"1\" name=\"mam_pair_id\">%1</elementInformation>")
+			.arg(mam_pair_id);
+	}
+	if (!mam_chain_id.isEmpty()) {
+		text += QStringLiteral("<elementInformation show=\"1\" name=\"mam_chain_id\">%1</elementInformation>")
+			.arg(mam_chain_id);
+	}
+	if (!mam_chain_order.isEmpty()) {
+		text += QStringLiteral("<elementInformation show=\"1\" name=\"mam_chain_order\">%1</elementInformation>")
+			.arg(mam_chain_order);
+	}
+	if (!legacy_chain.isEmpty()) {
+		text += chainInfoXml(legacy_chain, legacy_chain_order);
+	}
+	text += QStringLiteral("</elementInformations>");
+	return text;
+}
+
 QString writeContinuationChainDiagnosticsFixture(const QString &source, QTemporaryDir &out_dir)
 {
 	QString text = QString::fromUtf8(CliTestUtils::readFile(source));
@@ -282,6 +341,200 @@ QString writeContinuationChainDiagnosticsFixture(const QString &source, QTempora
 		return {};
 
 	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_chain_diagnostics.qet"));
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+		return {};
+	file.write(text.toUtf8());
+	return path;
+}
+
+QString writeContinuationNamespacedPairDiagnosticsFixture(const QString &source, QTemporaryDir &out_dir)
+{
+	QString text = QString::fromUtf8(CliTestUtils::readFile(source));
+	if (text.isEmpty())
+		return {};
+
+	bool ok = true;
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("1L1"),
+			QStringLiteral("/2.0"),
+			QStringLiteral("CONT-1"),
+			QStringLiteral("PAIR_OK"),
+			QString(),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L2</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.1</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("PAIR_SINGLE"),
+			QStringLiteral("/2.1"),
+			QStringLiteral("CONT-2"),
+			QStringLiteral("PAIR_SINGLE"),
+			QString(),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L3</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.2</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("PAIR_THREE_A"),
+			QStringLiteral("/2.2"),
+			QStringLiteral("CONT-3"),
+			QStringLiteral("PAIR_THREE"),
+			QString(),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1N</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.3</elementInformation><elementInformation show=\"1\" name=\"voltage\">0VAC</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("PAIR_CHAIN_A"),
+			QStringLiteral("/2.3"),
+			QStringLiteral("CONT-4"),
+			QStringLiteral("PAIR_CHAIN"),
+			QStringLiteral("CHAIN_CONFLICT"),
+			QStringLiteral("1")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">2N</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.4</elementInformation><elementInformation show=\"1\" name=\"voltage\">0VAC</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("PAIR_CHAIN_B"),
+			QStringLiteral("/2.4"),
+			QStringLiteral("CONT-5"),
+			QStringLiteral("PAIR_CHAIN"),
+			QStringLiteral("CHAIN_CONFLICT"),
+			QStringLiteral("2")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("1L1"),
+			QStringLiteral("/1.5"),
+			QStringLiteral("CONT-6"),
+			QStringLiteral("PAIR_OK"),
+			QString(),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L2</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.1</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("PAIR_THREE_B"),
+			QStringLiteral("/1.1"),
+			QStringLiteral("CONT-7"),
+			QStringLiteral("PAIR_THREE"),
+			QString(),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L3</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.2</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("PAIR_THREE_C"),
+			QStringLiteral("/1.2"),
+			QStringLiteral("CONT-8"),
+			QStringLiteral("PAIR_THREE"),
+			QString(),
+			QString()));
+	if (!ok)
+		return {};
+
+	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_namespaced_pair_diagnostics.qet"));
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+		return {};
+	file.write(text.toUtf8());
+	return path;
+}
+
+QString writeContinuationNamespacedChainDiagnosticsFixture(const QString &source, QTemporaryDir &out_dir)
+{
+	QString text = QString::fromUtf8(CliTestUtils::readFile(source));
+	if (text.isEmpty())
+		return {};
+
+	bool ok = true;
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("MAM_CHAIN_A"),
+			QStringLiteral("/1.5"),
+			QStringLiteral("CONT-1"),
+			QString(),
+			QStringLiteral("MAM_CHAIN_OK"),
+			QStringLiteral("1")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L2</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.1</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("MAM_CHAIN_B"),
+			QStringLiteral("/2.0"),
+			QStringLiteral("CONT-2"),
+			QString(),
+			QStringLiteral("MAM_CHAIN_OK"),
+			QStringLiteral("2")));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L3</elementInformation><elementInformation show=\"1\" name=\"xref\">/1.2</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("MAM_CHAIN_C"),
+			QStringLiteral("/1.5"),
+			QStringLiteral("CONT-8"),
+			QString(),
+			QStringLiteral("MAM_CHAIN_OK"),
+			QStringLiteral("3")));
+	if (!ok)
+		return {};
+
+	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_namespaced_chain_diagnostics.qet"));
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+		return {};
+	file.write(text.toUtf8());
+	return path;
+}
+
+QString writeContinuationPairCardinalityFixture(const QString &source, QTemporaryDir &out_dir)
+{
+	QString text = QString::fromUtf8(CliTestUtils::readFile(source));
+	if (text.isEmpty())
+		return {};
+
+	bool ok = true;
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L1</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.0</elementInformation><elementInformation show=\"1\" name=\"voltage\">400VAC</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("1L1"),
+			QStringLiteral("/2.0"),
+			QStringLiteral("CARD-1"),
+			QStringLiteral("PAIR_TOO_MANY"),
+			QString(),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L2</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.1</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("1L2"),
+			QStringLiteral("/2.1"),
+			QStringLiteral("CARD-2"),
+			QStringLiteral("PAIR_TOO_MANY"),
+			QString(),
+			QString()));
+	ok &= replaceOnce(
+		text,
+		QStringLiteral("<elementInformations><elementInformation show=\"1\" name=\"potential\">1L3</elementInformation><elementInformation show=\"1\" name=\"xref\">/2.2</elementInformation></elementInformations>"),
+		mamContinuationInfoXml(
+			QStringLiteral("1L3"),
+			QStringLiteral("/2.2"),
+			QStringLiteral("CARD-3"),
+			QStringLiteral("PAIR_TOO_MANY"),
+			QString(),
+			QString()));
+	if (!ok)
+		return {};
+
+	const QString path = out_dir.filePath(QStringLiteral("mam_continuation_pair_cardinality.qet"));
 	QFile file(path);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
 		return {};
@@ -413,6 +666,10 @@ private slots:
 				QStringLiteral("grid"),
 				QStringLiteral("path"),
 				QStringLiteral("direction"),
+				QStringLiteral("mam_continuation_id"),
+				QStringLiteral("mam_pair_id"),
+				QStringLiteral("mam_chain_id"),
+				QStringLiteral("mam_chain_order"),
 				QStringLiteral("chain"),
 				QStringLiteral("chain_order"),
 				QStringLiteral("visible_xref"),
@@ -572,6 +829,139 @@ private slots:
 		QVERIFY2(saw_missing_order, "expected missing chain_order diagnostic");
 		QVERIFY2(saw_duplicate_order, "expected duplicate chain_order diagnostic");
 		QVERIFY2(saw_missing_target, "expected missing chain target diagnostic");
+	}
+
+	void potentialContinuationDiagnosticsReadNamespacedPairFields()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString namespaced_fixture = writeContinuationNamespacedPairDiagnosticsFixture(fixture, out_dir);
+		QVERIFY2(!namespaced_fixture.isEmpty(), "failed to prepare namespaced pair continuation fixture");
+
+		const QString export_path = out_dir.filePath(QStringLiteral("mam_continuation_namespaced_pair.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-continuation"),
+			namespaced_fixture,
+			export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(result.exit_code == 0,
+				 qPrintable(QStringLiteral("namespaced continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(result.exit_code)
+								.arg(result.stdout_text.left(500))
+								.arg(result.stderr_text.left(500))));
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+		QCOMPARE(rows.size(), 9);
+
+		const QList<QHash<QString, QString>> pair_ok = rowsByMamPairId(rows, QStringLiteral("PAIR_OK"));
+		QCOMPARE(pair_ok.size(), 2);
+		for (const QHash<QString, QString> &row : pair_ok) {
+			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("1:1"));
+			QCOMPARE(row.value(QStringLiteral("relationship")), QStringLiteral("mam_pair PAIR_OK"));
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("OK"));
+			QVERIFY(row.value(QStringLiteral("diagnostics")).isEmpty());
+		}
+
+		const QList<QHash<QString, QString>> single_pair = rowsByMamPairId(rows, QStringLiteral("PAIR_SINGLE"));
+		QCOMPARE(single_pair.size(), 1);
+		QCOMPARE(single_pair.first().value(QStringLiteral("status")), QStringLiteral("ERROR"));
+		QCOMPARE(single_pair.first().value(QStringLiteral("cardinality")), QStringLiteral("unresolved"));
+		QVERIFY(single_pair.first().value(QStringLiteral("diagnostics")).contains(QStringLiteral("mam_pair_id expects exactly two continuations")));
+
+		const QList<QHash<QString, QString>> triple_pair = rowsByMamPairId(rows, QStringLiteral("PAIR_THREE"));
+		QCOMPARE(triple_pair.size(), 3);
+		for (const QHash<QString, QString> &row : triple_pair) {
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("ERROR"));
+			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("invalid-pair"));
+			QCOMPARE(row.value(QStringLiteral("relationship")), QStringLiteral("mam_pair PAIR_THREE"));
+			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("mam_pair_id expects exactly two continuations")));
+		}
+
+		const QList<QHash<QString, QString>> conflicting_pair = rowsByMamPairId(rows, QStringLiteral("PAIR_CHAIN"));
+		QCOMPARE(conflicting_pair.size(), 2);
+		for (const QHash<QString, QString> &row : conflicting_pair) {
+			QCOMPARE(row.value(QStringLiteral("mam_chain_id")), QStringLiteral("CHAIN_CONFLICT"));
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("ERROR"));
+			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("mam_pair_id cannot be combined")));
+		}
+	}
+
+	void potentialContinuationDiagnosticsReadNamespacedChainFields()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString namespaced_fixture = writeContinuationNamespacedChainDiagnosticsFixture(fixture, out_dir);
+		QVERIFY2(!namespaced_fixture.isEmpty(), "failed to prepare namespaced chain continuation fixture");
+
+		const QString export_path = out_dir.filePath(QStringLiteral("mam_continuation_namespaced_chain.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-continuation"),
+			namespaced_fixture,
+			export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(result.exit_code == 0,
+				 qPrintable(QStringLiteral("namespaced chain continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(result.exit_code)
+								.arg(result.stdout_text.left(500))
+								.arg(result.stderr_text.left(500))));
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+		QCOMPARE(rows.size(), 9);
+
+		const QList<QHash<QString, QString>> mam_chain = rowsByChain(rows, QStringLiteral("MAM_CHAIN_OK"));
+		QCOMPARE(mam_chain.size(), 3);
+		for (const QHash<QString, QString> &row : mam_chain) {
+			QCOMPARE(row.value(QStringLiteral("mam_chain_id")), QStringLiteral("MAM_CHAIN_OK"));
+			QVERIFY(!row.value(QStringLiteral("mam_chain_order")).isEmpty());
+			QCOMPARE(row.value(QStringLiteral("chain")), QStringLiteral("MAM_CHAIN_OK"));
+			QCOMPARE(row.value(QStringLiteral("chain_order")), row.value(QStringLiteral("mam_chain_order")));
+			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("chain"));
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("OK"));
+			QVERIFY(row.value(QStringLiteral("relationship")).startsWith(QStringLiteral("mam_chain MAM_CHAIN_OK order ")));
+			QVERIFY(row.value(QStringLiteral("diagnostics")).isEmpty());
+		}
+	}
+
+	void potentialContinuationDiagnosticsRejectsPairCardinalityAboveTwo()
+	{
+		const QString fixture = currentPathContinuationExample();
+		QVERIFY2(!fixture.isEmpty(), "MAM current-path continuation example project not found");
+
+		QTemporaryDir out_dir;
+		QVERIFY(out_dir.isValid());
+		const QString pair_fixture = writeContinuationPairCardinalityFixture(fixture, out_dir);
+		QVERIFY2(!pair_fixture.isEmpty(), "failed to prepare pair cardinality fixture");
+
+		const QString export_path = out_dir.filePath(QStringLiteral("mam_continuation_pair_cardinality.csv"));
+		const CliTestUtils::CliResult result = CliTestUtils::runQetCli({
+			QStringLiteral("--export-mam-continuation"),
+			pair_fixture,
+			export_path
+		}, 30000, continuationCliUsesOffscreenPlatform());
+		QVERIFY2(result.exit_code == 0,
+				 qPrintable(QStringLiteral("pair-cardinality continuation export failed with exit %1\nstdout: %2\nstderr: %3")
+								.arg(result.exit_code)
+								.arg(result.stdout_text.left(500))
+								.arg(result.stderr_text.left(500))));
+
+		const QList<QStringList> rows = CliTestUtils::parseSemicolonCsv(
+			QString::fromUtf8(CliTestUtils::readFile(export_path)));
+		const QList<QHash<QString, QString>> bad_pair = rowsByMamPairId(rows, QStringLiteral("PAIR_TOO_MANY"));
+		QCOMPARE(bad_pair.size(), 3);
+		for (const QHash<QString, QString> &row : bad_pair) {
+			QCOMPARE(row.value(QStringLiteral("status")), QStringLiteral("ERROR"));
+			QCOMPARE(row.value(QStringLiteral("cardinality")), QStringLiteral("invalid-pair"));
+			QCOMPARE(row.value(QStringLiteral("relationship")), QStringLiteral("mam_pair PAIR_TOO_MANY"));
+			QVERIFY(row.value(QStringLiteral("diagnostics")).contains(QStringLiteral("mam_pair_id expects exactly two continuations")));
+		}
 	}
 };
 

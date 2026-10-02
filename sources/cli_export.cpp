@@ -1575,6 +1575,7 @@ int exportMamContinuation(QETProject &project, const QString &output)
 	static const QStringList columns {
 		"potential", "signal", "voltage", "continuation_uuid",
 		"folio", "grid", "path", "direction",
+		"mam_continuation_id", "mam_pair_id", "mam_chain_id", "mam_chain_order",
 		"chain", "chain_order", "visible_xref",
 		"target_uuid", "target_folio", "target_grid", "target_path",
 		"computed_xref", "cardinality", "relationship", "status",
@@ -1600,6 +1601,10 @@ int exportMamContinuation(QETProject &project, const QString &output)
 			continuation.grid,
 			continuation.path,
 			continuation.direction,
+			continuation.mam_continuation_id,
+			continuation.mam_pair_id,
+			continuation.mam_chain_id,
+			continuation.mam_chain_order < 0 ? QString() : QString::number(continuation.mam_chain_order),
 			continuation.chain,
 			continuation.chain_order < 0 ? QString() : QString::number(continuation.chain_order),
 			continuation.visible_xref,

@@ -98,8 +98,9 @@ Current-path / continuation-reference decision evidence:
 - Current implementation status: `ContinuationProjectionService` and `--export-mam-continuation` now provide the first read-only diagnostic over existing MAM pilot arrows. The projection is also visible as `potential_continuation` in the general cross-reference backbone.
 - The first diagnostic hardening slice is now covered by focused tests for empty potential/signal, missing counterpart, ambiguous same-potential groups, same-direction pairs, stale visible `xref`, and `potential_continuation` cross-reference rows.
 - Chain-order diagnostics are now also pinned read-only: an ordered chain can resolve calculated targets, while missing `chain_order`, duplicate `chain_order`, and direction endpoints without a chain target are exposed as warning/error facts.
+- Namespaced read-only relationship fields are now recognized: `mam_continuation_id`, `mam_pair_id`, `mam_chain_id`, and `mam_chain_order`. Explicit pairs require exactly two continuations; namespaced chains supersede legacy `chain`/`chain_order`; pair plus chain is diagnosed as an error.
 - The current implementation remains read-only: no UI behavior, XML schema, persistence, automatic repair, or visible `xref` write-back is changed.
-- The next current-path implementation slice should decide the first durable relationship model for continuation groups: `chain`/`chain_order`, explicit pair ID, or both. That decision comes before any persistence, write-back, or UI synchronization.
+- The current recommendation for the first durable relationship model is both: `mam_pair_id` for explicit point-to-point continuations and `mam_chain_id`/`mam_chain_order` for chains. The next implementation step should decide where and how these tested facts are persisted before any write-back or UI synchronization.
 - Portability note: the production continuation service and CMake registration are not Windows-specific. The Windows-specific workaround is limited to qttest CLI execution, where continuation tests disable `QT_QPA_PLATFORM=offscreen` only on Windows.
 
 PLC module decision evidence:

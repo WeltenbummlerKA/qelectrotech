@@ -79,6 +79,9 @@ QString xrefText(int folio, const QString &path)
 
 QString groupKey(const ContinuationProjection &projection)
 {
+	if (!projection.mam_pair_id.isEmpty()) {
+		return QStringLiteral("mam_pair_id:") % projection.mam_pair_id;
+	}
 	if (!projection.chain.isEmpty()) {
 		return QStringLiteral("chain:") % projection.chain;
 	}
@@ -148,6 +151,28 @@ void checkVisibleText(ContinuationProjection &projection)
 	}
 }
 
+bool hasExplicitChain(const ContinuationProjection &projection)
+{
+	return !projection.mam_chain_id.isEmpty();
+}
+
+bool hasAnyChain(const ContinuationProjection &projection)
+{
+	return !projection.chain.isEmpty();
+}
+
+QString chainRelationship(const ContinuationProjection &projection)
+{
+	if (!projection.mam_chain_id.isEmpty()) {
+		return QStringLiteral("mam_chain %1 order %2")
+			.arg(projection.mam_chain_id)
+			.arg(projection.chain_order);
+	}
+	return QStringLiteral("chain %1 order %2")
+		.arg(projection.chain)
+		.arg(projection.chain_order);
+}
+
 } // namespace
 
 QList<ContinuationProjection> ContinuationProjectionService::continuations(QETProject &project) const
@@ -178,10 +203,17 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 			projection.potential = info.value(QStringLiteral("potential")).toString().trimmed();
 			projection.signal = info.value(QStringLiteral("signal")).toString().trimmed();
 			projection.voltage = info.value(QStringLiteral("voltage")).toString().trimmed();
-			projection.chain = info.value(QStringLiteral("chain")).toString().trimmed();
-			bool order_ok = false;
-			const int order = info.value(QStringLiteral("chain_order")).toString().toInt(&order_ok);
-			projection.chain_order = order_ok ? order : -1;
+			projection.mam_continuation_id = info.value(QStringLiteral("mam_continuation_id")).toString().trimmed();
+			projection.mam_pair_id = info.value(QStringLiteral("mam_pair_id")).toString().trimmed();
+			projection.mam_chain_id = info.value(QStringLiteral("mam_chain_id")).toString().trimmed();
+			bool mam_order_ok = false;
+			const int mam_order = info.value(QStringLiteral("mam_chain_order")).toString().toInt(&mam_order_ok);
+			projection.mam_chain_order = mam_order_ok ? mam_order : -1;
+			const QString legacy_chain = info.value(QStringLiteral("chain")).toString().trimmed();
+			bool legacy_order_ok = false;
+			const int legacy_order = info.value(QStringLiteral("chain_order")).toString().toInt(&legacy_order_ok);
+			projection.chain = projection.mam_chain_id.isEmpty() ? legacy_chain : projection.mam_chain_id;
+			projection.chain_order = mam_order_ok ? mam_order : (legacy_order_ok ? legacy_order : -1);
 			projection.direction = continuationDirection(element);
 			projection.folio = folios.value(diagram, -1);
 			projection.grid = grid;
@@ -200,6 +232,9 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 			}
 			if (projection.path.isEmpty()) {
 				projection.diagnostics << QStringLiteral("ERROR: empty current path");
+			}
+			if (!projection.mam_pair_id.isEmpty() && hasAnyChain(projection)) {
+				projection.diagnostics << QStringLiteral("ERROR: mam_pair_id cannot be combined with mam_chain_id or legacy chain");
 			}
 
 			projections << projection;
@@ -228,10 +263,26 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 	for (const QList<int> &indexes : groups) {
 		if (indexes.size() == 1) {
 			ContinuationProjection &projection = projections[indexes.first()];
-			if (!projection.potential.isEmpty() || !projection.signal.isEmpty()) {
+			if (!projection.mam_pair_id.isEmpty()) {
+				projection.diagnostics << QStringLiteral("ERROR: mam_pair_id expects exactly two continuations");
+			} else if (!projection.potential.isEmpty() || !projection.signal.isEmpty()) {
 				projection.diagnostics << QStringLiteral("ERROR: missing continuation counterpart");
 			}
 			projection.status = statusFor(projection.diagnostics);
+			continue;
+		}
+
+		const bool pair_group = std::all_of(indexes.begin(), indexes.end(), [&](int index) {
+			return !projections.at(index).mam_pair_id.isEmpty();
+		});
+		if (pair_group && indexes.size() != 2) {
+			for (int index : indexes) {
+				ContinuationProjection &projection = projections[index];
+				projection.cardinality = QStringLiteral("invalid-pair");
+				projection.relationship = QStringLiteral("mam_pair %1").arg(projection.mam_pair_id);
+				projection.diagnostics << QStringLiteral("ERROR: mam_pair_id expects exactly two continuations");
+				projection.status = statusFor(projection.diagnostics);
+			}
 			continue;
 		}
 
@@ -240,12 +291,17 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 			ContinuationProjection &second = projections[indexes.at(1)];
 			first.cardinality = QStringLiteral("1:1");
 			second.cardinality = QStringLiteral("1:1");
-			first.relationship = first.chain.isEmpty()
-				? QStringLiteral("auto-point-to-point")
-				: QStringLiteral("chain %1 order %2").arg(first.chain).arg(first.chain_order);
-			second.relationship = second.chain.isEmpty()
-				? QStringLiteral("auto-point-to-point")
-				: QStringLiteral("chain %1 order %2").arg(second.chain).arg(second.chain_order);
+			if (!first.mam_pair_id.isEmpty()) {
+				first.relationship = QStringLiteral("mam_pair %1").arg(first.mam_pair_id);
+				second.relationship = QStringLiteral("mam_pair %1").arg(second.mam_pair_id);
+			} else {
+				first.relationship = first.chain.isEmpty()
+					? QStringLiteral("auto-point-to-point")
+					: chainRelationship(first);
+				second.relationship = second.chain.isEmpty()
+					? QStringLiteral("auto-point-to-point")
+					: chainRelationship(second);
+			}
 			setTarget(first, second);
 			setTarget(second, first);
 			if (!hasOppositeDirection(first, second)) {
@@ -260,7 +316,7 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 		}
 
 		const bool chain_group = std::all_of(indexes.begin(), indexes.end(), [&](int index) {
-			return !projections.at(index).chain.isEmpty();
+			return hasAnyChain(projections.at(index));
 		});
 		if (!chain_group) {
 			for (int index : indexes) {
@@ -281,7 +337,9 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 		for (int index : ordered) {
 			ContinuationProjection &projection = projections[index];
 			if (projection.chain_order < 0) {
-				projection.diagnostics << QStringLiteral("WARNING: missing chain_order");
+				projection.diagnostics << (hasExplicitChain(projection)
+					? QStringLiteral("WARNING: missing mam_chain_order")
+					: QStringLiteral("WARNING: missing chain_order"));
 			} else if (used_orders.contains(projection.chain_order)) {
 				projection.diagnostics << QStringLiteral("WARNING: duplicate chain_order %1").arg(projection.chain_order);
 			}
@@ -291,7 +349,7 @@ QList<ContinuationProjection> ContinuationProjectionService::continuations(QETPr
 		for (int order_index = 0; order_index < ordered.size(); ++order_index) {
 			ContinuationProjection &projection = projections[ordered.at(order_index)];
 			projection.cardinality = QStringLiteral("chain");
-			projection.relationship = QStringLiteral("chain %1 order %2").arg(projection.chain).arg(projection.chain_order);
+			projection.relationship = chainRelationship(projection);
 			int target_index = -1;
 			if (isForwardDirection(projection.direction) && order_index + 1 < ordered.size()) {
 				target_index = ordered.at(order_index + 1);

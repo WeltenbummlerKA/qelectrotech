@@ -25,10 +25,15 @@ Completed:
   - missing `chain_order` is reported as a warning;
   - duplicate `chain_order` is reported as a warning;
   - a chain endpoint whose direction has no next/previous target is reported as an error.
+- Added the next read-only relationship slice:
+  - `mam_continuation_id`, `mam_pair_id`, `mam_chain_id`, and `mam_chain_order` are read from pilot arrow `elementInformations` and exported by `--export-mam-continuation`;
+  - `mam_pair_id` models explicit point-to-point relationships and expects exactly two continuations;
+  - `mam_chain_id`/`mam_chain_order` provide the namespaced replacement path for legacy `chain`/`chain_order`;
+  - combining `mam_pair_id` with any chain relationship is reported as an error;
+  - legacy `chain`/`chain_order` remains supported for the existing test evidence.
 
 Next required slice:
-- Decide and document the first persisted relationship model for continuation arrows: `chain`/`chain_order`, explicit pair ID, or both.
-- Review whether the read-only chain behavior is the desired first persisted model, or whether explicit pair IDs are also required for manual point-to-point cases.
+- Decide the first persistence shape for these already-tested read-only facts. Current recommendation is both: `mam_pair_id` for explicit 1:1 relationships and `mam_chain_id`/`mam_chain_order` for multi-point chains.
 - Keep UI/write-back out of scope until the read-only chain/pair model is stable.
 
 Verification:
@@ -37,6 +42,9 @@ Verification:
   - `potentialContinuationDiagnosticsReportWarningsAndErrors`
   - `potentialContinuationDiagnosticsCatchEdgeErrors`
   - `potentialContinuationDiagnosticsReportChainOrderIssues`
+  - `potentialContinuationDiagnosticsReadNamespacedPairFields`
+  - `potentialContinuationDiagnosticsReadNamespacedChainFields`
+  - `potentialContinuationDiagnosticsRejectsPairCardinalityAboveTwo`
   - `exportsPotentialContinuationsAsBackboneRows`
 - Direct CLI checks:
   - `--export-mam-continuation examples/MAM_Strompfade_2Seiten.qet` -> 8 rows, 5 warnings, 2 errors.
